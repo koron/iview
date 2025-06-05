@@ -6,46 +6,10 @@
 <title>{{ .Name }} | iview</title>
 
 <link rel="stylesheet" type="text/css" href="/_/default.css">
+<script async src="/_/reload.js"></script>
 
 <h1>{{ .Name }}</h1>
 
 <section id="content">
   <pre>{{ .Content }}</pre>
 </section>
-
-<script>
-  const urlToCheck = window.location.href;
-  const reloadInterval = 5 * 1000; // every 5 seconds.
-  const prevTime = Date.now();
-
-  async function checkAndReload() {
-    try {
-      const response = await fetch(urlToCheck, {
-        method: 'HEAD',
-        cache: 'no-store' // without cache
-      });
-
-      if (!response.ok) {
-        return;
-      }
-
-      const dateHeader = response.headers.get('Date');
-      if (!dateHeader) {
-        return;
-      }
-      const serverTimestamp = new Date(dateHeader).getTime();
-
-      if (serverTimestamp <= prevTime) {
-        return;
-      }
-
-      location.reload(true); // 強制的にキャッシュを破棄してリロード
-      prevTime = serverTimestamp; // 次回のために最新のサーバー時刻をprevTimeに設定
-    } catch (error) {
-      // TODO: stop to reload, and show error.
-    }
-  }
-
-  // Check periodically
-  setInterval(checkAndReload, reloadInterval);
-</script>

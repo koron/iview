@@ -4,6 +4,7 @@ import (
 	"embed"
 	"errors"
 	"flag"
+	"html"
 	"html/template"
 	"io"
 	"io/fs"
@@ -13,8 +14,13 @@ import (
 	"path"
 )
 
+// static assets
 //go:embed _
 var assetsFS embed.FS
+
+// default HTML template
+//go:embed default.html
+var defaultView string
 
 type Server struct {
 	root http.FileSystem
@@ -52,12 +58,24 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//go:embed default.html
-var defaultView string
+type File struct {
+	http.File
+}
 
-type Data struct {
-	Name    string
-	Content string
+func (f *File) Name() (string, error) {
+	fi, err := f.Stat()
+	if err != nil {
+		return "", err
+	}
+	return fi.Name(), nil
+}
+
+func (f *File) Content() (string, error) {
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) error {
@@ -66,26 +84,20 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 	if err != nil {
 		return err
 	}
-	data := Data{
-		Name: fi.Name(),
-	}
+
 	// Prepare the content
 	if fi.IsDir() {
 		// FIXME: output the directory contents to data.Content.
 		s.base.ServeHTTP(w, r)
 		return nil
-	} else {
-		if r.Method == "HEAD" {
-			w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
-			w.WriteHeader(http.StatusOK)
-			return nil
-		}
-		b, err := io.ReadAll(f)
-		if err != nil {
-			return err
-		}
-		data.Content = string(b)
 	}
+
+	if r.Method == "HEAD" {
+		w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
+		w.WriteHeader(http.StatusOK)
+		return nil
+	}
+
 	// Load "default" template
 	tmpl, err := template.New("default").Parse(defaultView)
 	if err != nil {
@@ -95,9 +107,13 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
 	w.WriteHeader(http.StatusOK)
-	err = tmpl.Execute(w, &data)
+	err = tmpl.Execute(w, &File{f})
 	if err != nil {
-		return err
+		log.Printf("template failure: %s", err)
+		io.WriteString(w, "<h1>Template Failure</h1>")
+		io.WriteString(w, "<div>")
+		io.WriteString(w, html.EscapeString(err.Error()))
+		io.WriteString(w, "</div>")
 	}
 	return nil
 }
@@ -118,7 +134,7 @@ func main() {
 		dir  string
 	)
 
-	flag.StringVar(&addr, "addr", ":8000", `address that hosts the HTTP server`)
+	flag.StringVar(&addr, "addr", "localhost:8000", `address that hosts the HTTP server`)
 	flag.StringVar(&dir, "dir", ".", `root directory for the content to host`)
 	flag.Parse()
 
