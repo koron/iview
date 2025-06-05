@@ -12,13 +12,19 @@ import (
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/gomarkdown/markdown"
+	mdhtml "github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 )
 
 // static assets
+//
 //go:embed _
 var assetsFS embed.FS
 
 // default HTML template
+//
 //go:embed default.html
 var defaultView string
 
@@ -52,31 +58,62 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer f.Close()
 
 	if err = s.serveView(w, r, f); err != nil {
-		log.Printf("failed to serve view %s: %s", err)
+		log.Printf("failed to serve view %s: %s", upath, err)
 		w.WriteHeader(s.toHTTPError(err))
 		return
 	}
 }
 
-type File struct {
+type File interface {
+	Name() (any, error)
+	Content() (any, error)
+}
+
+type RawFile struct {
 	http.File
 }
 
-func (f *File) Name() (string, error) {
+func (f *RawFile) Name() (any, error) {
 	fi, err := f.Stat()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return fi.Name(), nil
 }
 
-func (f *File) Content() (string, error) {
+func (f *RawFile) Content() (any, error) {
 	b, err := io.ReadAll(f)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return string(b), nil
 }
+
+var _ File = (*RawFile)(nil)
+
+type MarkdownFile struct {
+	RawFile
+}
+
+func (f *MarkdownFile) Content() (any, error) {
+	raw, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	renderer := mdhtml.NewRenderer(mdhtml.RendererOptions{
+		Flags: mdhtml.CommonFlags |
+			mdhtml.NofollowLinks |
+			mdhtml.NoreferrerLinks |
+			mdhtml.NoopenerLinks |
+			mdhtml.HrefTargetBlank |
+			mdhtml.FootnoteReturnLinks,
+	})
+	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+	doc := parser.NewWithExtensions(extensions).Parse(raw)
+	return template.HTML(markdown.Render(doc, renderer)), nil
+}
+
+var _ File = (*MarkdownFile)(nil)
 
 func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) error {
 	// Examine file metadata
@@ -107,7 +144,7 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
 	w.WriteHeader(http.StatusOK)
-	err = tmpl.Execute(w, &File{f})
+	err = tmpl.Execute(w, &MarkdownFile{RawFile{f}})
 	if err != nil {
 		log.Printf("template failure: %s", err)
 		io.WriteString(w, "<h1>Template Failure</h1>")
