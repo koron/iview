@@ -2,13 +2,12 @@ package main
 
 import (
 	"embed"
-	"io/fs"
 	"log"
 	"net/http"
 	"os"
 )
 
-//go:embed assets
+//go:embed _
 var assetsFS embed.FS
 
 func main() {
@@ -17,15 +16,12 @@ func main() {
 		dirpath = "."
 	)
 
-	// Provide static contents under "/_/"
-	contents, err := fs.Sub(assetsFS, "assets")
-	if err != nil {
-		log.Fatal(err)
-	}
-	http.Handle("/_/", http.StripPrefix("/_/", http.FileServer(http.FS(contents))))
+	// Provide static contents at "/_/"
+	http.Handle("/_/", http.FileServer(http.FS(assetsFS)))
 
-	// Provide dynamic contents
+	// Provide dynamic contents at others
 	http.Handle("/", http.FileServer(http.FS(os.DirFS(dirpath))))
 
+	log.Printf("start to listening on %s", address)
 	log.Fatal(http.ListenAndServe(address, nil))
 }
