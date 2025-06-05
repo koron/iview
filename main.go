@@ -129,8 +129,9 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 		return nil
 	}
 
+	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
+
 	if r.Method == "HEAD" {
-		w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
 		w.WriteHeader(http.StatusOK)
 		return nil
 	}
@@ -142,7 +143,6 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 	}
 	// Execute the template and output as the response
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
 	w.WriteHeader(http.StatusOK)
 	err = tmpl.Execute(w, &MarkdownFile{RawFile{f}})
 	if err != nil {
