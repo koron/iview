@@ -11,7 +11,7 @@ type Topic[M any] struct {
 
 func New[M any]() *Topic[M] {
 	return &Topic[M]{
-		subs:    map[*Subscription[M]]struct{}{},
+		subs: map[*Subscription[M]]struct{}{},
 	}
 }
 
@@ -47,13 +47,12 @@ func (t *Topic[M]) Publish(message M) {
 	}
 }
 
-func (t *Topic[M]) Close() error {
+func (t *Topic[M]) Close() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	for s := range t.subs {
 		t.unsubscribe(s)
 	}
-	return nil
 }
 
 type Subscription[M any] struct {
