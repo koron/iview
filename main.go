@@ -19,7 +19,7 @@ import (
 	"github.com/koron/iview/internal/templatefs"
 )
 
-//go:embed _embed
+//go:embed _resource
 var embedFS embed.FS
 
 type Server struct {
@@ -187,30 +187,42 @@ func layoutTemplate(tfs *templatefs.FS, name string) (*template.Template, error)
 
 var templateFS *templatefs.FS
 
-func init() {
-	subfs, err := fs.Sub(embedFS, "_embed/template")
-	if err != nil {
-		log.Fatal("not found template directory in the embed FS")
-	}
-	templateFS = templatefs.New(subfs)
-}
-
 func main() {
 	var (
 		addr string
 		dir  string
+		rsrc string
 	)
 
 	flag.StringVar(&addr, "addr", "localhost:8000", `address that hosts the HTTP server`)
 	flag.StringVar(&dir, "dir", ".", `root directory for the content to host`)
+	flag.StringVar(&rsrc, "rsrc", "", `resource directory for debug`)
 	flag.Parse()
 
+	var err error
+	var rsrcFS fs.FS
+
+	if rsrc != "" {
+		rsrcFS = os.DirFS(rsrc)
+	} else {
+		rsrcFS, err = fs.Sub(embedFS, "_resource")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	// Provide static contents at "/_/"
-	staticFS, err := fs.Sub(embedFS, "_embed/static")
+	staticFS, err := fs.Sub(rsrcFS, "static")
 	if err != nil {
 		log.Fatal(err)
 	}
 	http.Handle("/_/", http.StripPrefix("/_/", http.FileServerFS(staticFS)))
+
+	tmplFS, err := fs.Sub(rsrcFS, "template")
+	if err != nil  {
+		log.Fatal(err)
+	}
+	templateFS = templatefs.New(tmplFS)
 
 	// Provide dynamic contents at others
 	http.Handle("/", New(dir))
