@@ -1,3 +1,7 @@
+/*
+Package fsmonitor monitors change events in the specified directory.
+The detected Event are sent as messages to subscribers who have subscribed to the Topic.
+*/
 package fsmonitor
 
 import (

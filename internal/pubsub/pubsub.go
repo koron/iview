@@ -1,3 +1,8 @@
+/*
+Package pubsub provides simple pub/sub feature.
+Messages are guaranteed to be in order and subscribers receive them through channels.
+This package does not create goroutines for you; subscribers must create and manage goroutines to receive messages.
+*/
 package pubsub
 
 import (
