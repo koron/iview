@@ -19,13 +19,8 @@ import (
 	"github.com/koron/iview/internal/templatefs"
 )
 
-// static assets
-//
-//go:embed _
-var assetsFS embed.FS
-
-//go:embed templates
-var templatesDir embed.FS
+//go:embed _embed
+var embedFS embed.FS
 
 type Server struct {
 	root http.FileSystem
@@ -193,9 +188,9 @@ func layoutTemplate(tfs *templatefs.FS, name string) (*template.Template, error)
 var templateFS *templatefs.FS
 
 func init() {
-	subfs, err := fs.Sub(templatesDir, "templates")
+	subfs, err := fs.Sub(embedFS, "_embed/template")
 	if err != nil {
-		log.Fatal("not found templates directory in resource")
+		log.Fatal("not found template directory in the embed FS")
 	}
 	templateFS = templatefs.New(subfs)
 }
@@ -211,7 +206,11 @@ func main() {
 	flag.Parse()
 
 	// Provide static contents at "/_/"
-	http.Handle("/_/", http.FileServerFS(assetsFS))
+	staticFS, err := fs.Sub(embedFS, "_embed/static")
+	if err != nil {
+		log.Fatal(err)
+	}
+	http.Handle("/_/", http.StripPrefix("/_/", http.FileServerFS(staticFS)))
 
 	// Provide dynamic contents at others
 	http.Handle("/", New(dir))
