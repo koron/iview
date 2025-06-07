@@ -2,7 +2,7 @@ TEST_PACKAGE ?= ./...
 
 .PHONY: build
 build:
-	go build -gcflags '-e' ./...
+	go build -gcflags '-e' .
 
 .PHONY: test
 test:

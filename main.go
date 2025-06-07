@@ -16,6 +16,7 @@ import (
 	"github.com/gomarkdown/markdown"
 	mdhtml "github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
+	"github.com/koron/iview/internal/templatefs"
 )
 
 // static assets
@@ -23,10 +24,8 @@ import (
 //go:embed _
 var assetsFS embed.FS
 
-// default HTML template
-//
-//go:embed default.html
-var defaultView string
+//go:embed templates
+var templatesDir embed.FS
 
 type Server struct {
 	root http.FileSystem
@@ -136,15 +135,16 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 		return nil
 	}
 
-	// Load "default" template
-	tmpl, err := template.New("default").Parse(defaultView)
+	// Load template set for layout
+	tmpl, err := layoutTemplate(templateFS, "text/plain")
 	if err != nil {
 		return err
 	}
 	// Execute the template and output as the response
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	err = tmpl.Execute(w, &MarkdownFile{RawFile{f}})
+	//err = tmpl.Execute(w, &MarkdownFile{RawFile{f}})
+	err = tmpl.Execute(w, &RawFile{f})
 	if err != nil {
 		log.Printf("template failure: %s", err)
 		io.WriteString(w, "<h1>Template Failure</h1>")
@@ -163,6 +163,36 @@ func (s *Server) toHTTPError(err error) int {
 		return http.StatusForbidden
 	}
 	return http.StatusInternalServerError
+}
+
+func layoutTemplate(tfs *templatefs.FS, name string) (*template.Template, error) {
+	layout, err := tfs.Template("layout.html")
+	if err != nil {
+		return nil, err
+	}
+	layout, err = layout.Clone()
+	if err != nil {
+		return nil, err
+	}
+	main, err := tfs.Template(path.Join(name, "main.html"))
+	if err != nil {
+		return nil, err
+	}
+	_, err = layout.AddParseTree("main", main.Tree)
+	if err != nil {
+		return nil, err
+	}
+	return layout, nil
+}
+
+var templateFS *templatefs.FS
+
+func init() {
+	subfs, err := fs.Sub(templatesDir, "templates")
+	if err != nil {
+		log.Fatal("not found templates directory in resource")
+	}
+	templateFS = templatefs.New(subfs)
 }
 
 func main() {
