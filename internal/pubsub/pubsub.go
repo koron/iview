@@ -43,6 +43,9 @@ func (t *Topic[M]) Publish(message M) {
 	for s := range t.subs {
 		select {
 		case s.ch <- message:
+		default:
+			// Drop a message when channel is full/busy
+			continue
 		}
 	}
 }

@@ -30,6 +30,7 @@ func New(ctx context.Context, dir string) (*Monitor, error) {
 	ctx2, cancel := context.WithCancel(ctx)
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 	m := &Monitor{

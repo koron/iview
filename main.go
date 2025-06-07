@@ -63,11 +63,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type File interface {
-	Name() (any, error)
-	Content() (any, error)
-}
-
 type RawFile struct {
 	http.File
 }
@@ -88,31 +83,41 @@ func (f *RawFile) Content() (any, error) {
 	return string(b), nil
 }
 
-var _ File = (*RawFile)(nil)
-
-type MarkdownFile struct {
-	RawFile
+var templatefsOptions = []templatefs.Option{
+	templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
+		return tmpl.Funcs(funcMap), nil
+	}),
 }
 
-func (f *MarkdownFile) Content() (any, error) {
-	raw, err := io.ReadAll(f)
-	if err != nil {
-		return nil, err
+var funcMap = template.FuncMap{
+	"markdown": markdownFunc,
+}
+
+func markdownFunc(src string) template.HTML {
+	dst := markdown.ToHTML([]byte(src),
+		parser.NewWithExtensions(parser.CommonExtensions|parser.AutoHeadingIDs),
+		mdhtml.NewRenderer(mdhtml.RendererOptions{
+			Flags: mdhtml.CommonFlags |
+				mdhtml.NofollowLinks |
+				mdhtml.NoreferrerLinks |
+				mdhtml.NoopenerLinks |
+				mdhtml.HrefTargetBlank |
+				mdhtml.FootnoteReturnLinks}),
+	)
+	return template.HTML(dst)
+}
+
+var extToMIMETypes = map[string]string{
+	".md": "text/markdown",
+}
+
+func toMIMEType(name string) string {
+	ext := path.Ext(name)
+	if typ, ok := extToMIMETypes[ext]; ok {
+		return typ
 	}
-	renderer := mdhtml.NewRenderer(mdhtml.RendererOptions{
-		Flags: mdhtml.CommonFlags |
-			mdhtml.NofollowLinks |
-			mdhtml.NoreferrerLinks |
-			mdhtml.NoopenerLinks |
-			mdhtml.HrefTargetBlank |
-			mdhtml.FootnoteReturnLinks,
-	})
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-	doc := parser.NewWithExtensions(extensions).Parse(raw)
-	return template.HTML(markdown.Render(doc, renderer)), nil
+	return "text/plain"
 }
-
-var _ File = (*MarkdownFile)(nil)
 
 func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) error {
 	// Examine file metadata
@@ -136,7 +141,7 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 	}
 
 	// Load template set for layout
-	tmpl, err := layoutTemplate(templateFS, "text/plain")
+	tmpl, err := layoutTemplate(templateFS, toMIMEType(fi.Name()))
 	if err != nil {
 		return err
 	}
@@ -166,7 +171,7 @@ func (s *Server) toHTTPError(err error) int {
 }
 
 func layoutTemplate(tfs *templatefs.FS, name string) (*template.Template, error) {
-	layout, err := tfs.Template("layout.html")
+	layout, err := tfs.Template("layout.html", templatefsOptions...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +179,7 @@ func layoutTemplate(tfs *templatefs.FS, name string) (*template.Template, error)
 	if err != nil {
 		return nil, err
 	}
-	main, err := tfs.Template(path.Join(name, "main.html"))
+	main, err := tfs.Template(path.Join(name, "main.html"), templatefsOptions...)
 	if err != nil {
 		return nil, err
 	}
