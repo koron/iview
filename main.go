@@ -211,18 +211,19 @@ func main() {
 		}
 	}
 
-	// Provide static contents at "/_/"
-	staticFS, err := fs.Sub(rsrcFS, "static")
-	if err != nil {
-		log.Fatal(err)
-	}
-	http.Handle("/_/", http.StripPrefix("/_/", http.FileServerFS(staticFS)))
-
+	// Setup template file-system
 	tmplFS, err := fs.Sub(rsrcFS, "template")
 	if err != nil  {
 		log.Fatal(err)
 	}
 	templateFS = templatefs.New(tmplFS)
+
+	// Provide static contents at "/_/"
+	staticFS, err := fs.Sub(rsrcFS, "static")
+	if err != nil {
+		log.Fatal(err)
+	}
+	http.Handle("/_/static/", http.StripPrefix("/_/static/", http.FileServerFS(staticFS)))
 
 	// Provide dynamic contents at others
 	http.Handle("/", New(dir))
