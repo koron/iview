@@ -8,17 +8,23 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"time"
 )
 
 type FS struct {
 	fs.FS
-	cache map[string]*template.Template
+	cache map[string]*cacheEntry
+}
+
+type cacheEntry struct {
+	*template.Template
+	ModTime time.Time
 }
 
 func New(fsys fs.FS) *FS {
 	return &FS{
 		FS:    fsys,
-		cache: map[string]*template.Template{},
+		cache: map[string]*cacheEntry{},
 	}
 }
 
@@ -50,31 +56,37 @@ func (opts options) apply(tmpl *template.Template) (*template.Template, error) {
 var _ Option = (options)(nil)
 
 func (fs *FS) Template(name string, opts ...Option) (*template.Template, error) {
-	// Check cache for a parsed Template
-	if t, ok := fs.cache[name]; ok {
-		return t, nil
+	f, err := fs.Open(name)
+	if err != nil {
+		return nil, err
 	}
-
-	var loader = OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
-		// Load a file and parse as a Template
-		f, err := fs.Open(name)
-		if err != nil {
-			return nil, err
-		}
-		b, err := io.ReadAll(f)
-		f.Close()
-		if err != nil {
-			return nil, err
-		}
-		return tmpl.Parse(string(b))
-	})
-
-	// Apply options
-	tmpl, err := options(append(opts, loader)).apply(template.New(name))
+	defer f.Close()
+	fi, err := f.Stat()
 	if err != nil {
 		return nil, err
 	}
 
-	fs.cache[name] = tmpl
+	// Check cache for a parsed Template
+	if entry, ok := fs.cache[name]; ok && !fi.ModTime().After(entry.ModTime) {
+		return entry.Template, nil
+	}
+
+	// Create a new template and apply options
+	tmpl, err := options(opts).apply(template.New(name))
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse body of the template
+	body, err := io.ReadAll(f)
+	if err !=nil {
+		return nil, err
+	}
+	tmpl.Parse(string(body))
+
+	fs.cache[name] = &cacheEntry{
+		Template: tmpl,
+		ModTime:  fi.ModTime(),
+	}
 	return tmpl, nil
 }
