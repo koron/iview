@@ -15,3 +15,5 @@ iview is an HTTP server that serves the contents of a local directory. When serv
     Copy the URL above. For security reasons, it cannot be opened as a link.
 
 *   [**HTMX** Javascript API](https://htmx.org/api/)
+
+*   [sindresorhus/github-markdown-css](https://github.com/sindresorhus/github-markdown-css)

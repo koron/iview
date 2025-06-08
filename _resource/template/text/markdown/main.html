@@ -1,1 +1,9 @@
-<div class="markdown">{{ markdown .Content }}</div>
+<link rel="stylesheet" type="text/css" href="/_/static/thirdparty/github-markdown.css">
+<style>
+.markdown-body a {
+  text-decoration: underline;
+  text-underline-offset: .2rem;
+}
+</style>
+
+<div class="markdown-body">{{ markdown .Content }}</div>
