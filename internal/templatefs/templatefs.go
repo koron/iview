@@ -79,7 +79,7 @@ func (fs *FS) Template(name string, opts ...Option) (*template.Template, error) 
 
 	// Parse body of the template
 	body, err := io.ReadAll(f)
-	if err !=nil {
+	if err != nil {
 		return nil, err
 	}
 	tmpl.Parse(string(body))

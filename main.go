@@ -213,7 +213,7 @@ func main() {
 
 	// Setup template file-system
 	tmplFS, err := fs.Sub(rsrcFS, "template")
-	if err != nil  {
+	if err != nil {
 		log.Fatal(err)
 	}
 	templateFS = templatefs.New(tmplFS)
