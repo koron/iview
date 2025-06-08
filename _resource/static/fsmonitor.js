@@ -7,7 +7,8 @@
     switch (ev.data[0]) {
       case 'notify':
         if (ev.data[1] == location.pathname && ev.data[2] == 'write') {
-          location.reload(true);
+          // Using htmx.ajax() can prevent from reloading shared worker
+          htmx.ajax('GET', location.pathname);
         }
         break;
 
