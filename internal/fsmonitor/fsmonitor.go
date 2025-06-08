@@ -23,7 +23,7 @@ type Monitor struct {
 	topic   *pubsub.Topic[Event]
 }
 
-type Type fsnotify.Op
+type Type = fsnotify.Op
 
 type Event struct {
 	Path string
@@ -68,7 +68,7 @@ func (m *Monitor) run(ctx context.Context) {
 	for {
 		select {
 		case e := <-m.watcher.Events:
-			log.Printf("%+v", e)
+			//log.Printf("%+v", e)
 			switch e.Op {
 			case fsnotify.Create:
 				// Add a newly created directory to the watch list.
