@@ -14,4 +14,4 @@ iview is an HTTP server that serves the contents of a local directory. When serv
 
     Copy the URL above. For security reasons, it cannot be opened as a link.
 
-*   [HTML Javascript API](https://htmx.org/api/)
+*   [**HTMX** Javascript API](https://htmx.org/api/)
