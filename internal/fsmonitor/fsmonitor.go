@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 
@@ -82,7 +83,7 @@ func (m *Monitor) run(ctx context.Context) {
 				}
 			}
 			m.topic.Publish(Event{
-				Path: "/" + filepath.ToSlash(e.Name),
+				Path: "/" + path.Clean(filepath.ToSlash(e.Name)),
 				Type: Type(e.Op),
 			})
 		case <-ctx.Done():

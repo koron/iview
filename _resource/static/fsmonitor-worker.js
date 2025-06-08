@@ -41,7 +41,7 @@ eventSource.onmessage = (ev) => {
   }
   var now = Date.now();
   var beDeleted = [];
-  const data = JSON.parse(ev.data)
+  const data = JSON.parse(ev.data);
   for (const c of clients) {
     // Dispatch a message to watching clients
     if (data.path == c.path && data.type.includes(c.type)) {
