@@ -11,8 +11,10 @@ import (
 	"github.com/koron/iview/internal/fsmonitor"
 )
 
+var monitorDir = "."
+
 var monitor = sync.OnceValues(func() (*fsmonitor.Monitor, error) {
-	return fsmonitor.New(context.Background(), ".")
+	return fsmonitor.New(context.Background(), monitorDir)
 })
 
 type fsChangeEvent struct {

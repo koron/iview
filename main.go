@@ -225,6 +225,7 @@ func main() {
 	}
 	http.Handle("/_/static/", http.StripPrefix("/_/static/", http.FileServerFS(staticFS)))
 
+	monitorDir = dir
 	http.Handle("/_/stream/", http.StripPrefix("/_/stream/", http.HandlerFunc(serveStream)))
 
 	// Provide dynamic contents at others

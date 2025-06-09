@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"sync"
 
@@ -20,6 +19,7 @@ import (
 type Monitor struct {
 	cancel  context.CancelFunc
 	wg      *sync.WaitGroup
+	rootDir string
 	watcher *fsnotify.Watcher
 	topic   *pubsub.Topic[Event]
 }
@@ -41,6 +41,7 @@ func New(ctx context.Context, dir string) (*Monitor, error) {
 	m := &Monitor{
 		cancel:  cancel,
 		wg:      &sync.WaitGroup{},
+		rootDir: dir,
 		watcher: w,
 		topic:   pubsub.New[Event](),
 	}
@@ -82,8 +83,14 @@ func (m *Monitor) run(ctx context.Context) {
 					m.watcher.Add(e.Name)
 				}
 			}
+			// Compose a path of the event target on the HTTP server
+			name, err := filepath.Rel(m.rootDir, e.Name)
+			if err != nil {
+				log.Printf("fail to calc relative path: %s", err)
+				break
+			}
 			m.topic.Publish(Event{
-				Path: "/" + path.Clean(filepath.ToSlash(e.Name)),
+				Path: "/" + filepath.ToSlash(name),
 				Type: Type(e.Op),
 			})
 		case <-ctx.Done():
