@@ -44,7 +44,7 @@ eventSource.onmessage = (ev) => {
   const data = JSON.parse(ev.data);
   for (const c of clients) {
     // Dispatch a message to watching clients
-    if (data.path == c.path && data.type.includes(c.type)) {
+    if (data.path == c.path && data.type.filter(v => c.type.includes(v)).length > 0) {
       c.port.postMessage(['notify', data.path, data.type]);
     };
   }

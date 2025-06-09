@@ -1,4 +1,6 @@
 (function() {
+  const INTEREST_EVENTS = ['write', 'create'];
+
   const worker = new SharedWorker('/_/static/fsmonitor-worker.js');
 
   //let last = Date.now();
@@ -6,7 +8,7 @@
   worker.port.onmessage = (ev) => {
     switch (ev.data[0]) {
       case 'notify':
-        if (ev.data[1] == location.pathname && ev.data[2] == 'write') {
+        if (ev.data[1] == location.pathname && INTEREST_EVENTS.filter(v => ev.data[2].includes(v)).length > 0) {
           // Using htmx.ajax() can prevent from reloading shared worker
           htmx.ajax('GET', location.pathname);
         }
@@ -22,5 +24,5 @@
     }
   };
 
-  worker.port.postMessage(['connect', location.pathname, 'write']);
+  worker.port.postMessage(['connect', location.pathname, INTEREST_EVENTS]);
 })();

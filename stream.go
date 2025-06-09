@@ -14,6 +14,7 @@ import (
 var monitorDir = "."
 
 var monitor = sync.OnceValues(func() (*fsmonitor.Monitor, error) {
+	//log.Printf("fsmonitor start on %s", monitorDir)
 	return fsmonitor.New(context.Background(), monitorDir)
 })
 
@@ -69,6 +70,7 @@ func serveStream(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		case ev := <-s.Channel():
+			//log.Printf("fsmonitor receive: %+v", ev)
 			b, _ := json.Marshal(toFSChangeEvent(ev))
 			io.WriteString(w, "data: ")
 			w.Write(b)
