@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/koron/iview/internal/templatefs"
 )
@@ -55,8 +56,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type Link struct {
+	Name string
+	Path string
+}
+
 type RawFile struct {
 	http.File
+	path string
 }
 
 func (f *RawFile) Name() (any, error) {
@@ -73,6 +80,22 @@ func (f *RawFile) Content() (any, error) {
 		return nil, err
 	}
 	return string(b), nil
+}
+
+func (f *RawFile) Breadcrumbs() ([]Link, error) {
+	dirs := strings.Split(f.path, "/")
+	if len(dirs) < 2 {
+		return nil, nil
+	}
+	dirs = dirs[:len(dirs)-1]
+	links := append(make([]Link, 0, len(dirs)), Link{Name: "(Root)", Path: "/"})
+	for _, d := range dirs[1:] {
+		links = append(links, Link{
+			Name: d,
+			Path: links[len(links)-1].Path + d + "/",
+		})
+	}
+	return links, nil
 }
 
 var templatefsOptions = []templatefs.Option{
@@ -126,8 +149,7 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 	// Execute the template and output as the response
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	//err = tmpl.Execute(w, &MarkdownFile{RawFile{f}})
-	err = tmpl.Execute(w, &RawFile{f})
+	err = tmpl.Execute(w, &RawFile{File: f, path: r.URL.Path})
 	if err != nil {
 		log.Printf("template failure: %s", err)
 		io.WriteString(w, "<h1>Template Failure</h1>")

@@ -3,7 +3,7 @@ console.log('fsmonitor-worker start');
 const PING_INTERVAL = 15000;
 
 let clients = [];
-let streamStauts = '(N/A)';
+let streamStatus = undefined;
 
 function getClient(port) {
   for (const c of clients) {
@@ -24,7 +24,7 @@ function pingAllClients() {
     } else {
       // Ping with the stream status
       c.ping = now;
-      c.port.postMessage(["ping", streamStauts]);
+      c.port.postMessage(["ping", streamStatus]);
       return true;
     }
   });
@@ -51,18 +51,18 @@ eventSource.onmessage = (ev) => {
 };
 
 eventSource.onopen = (ev) => {
-  if (streamStauts != 'connected') {
+  if (streamStatus !== true) {
     console.log('eventSource: connected');
   }
-  streamStauts = 'connected';
+  streamStatus = true;
   pingAllClients();
 };
 
 eventSource.onerror = (ev) => {
-  if (streamStauts != 'disconnected') {
+  if (streamStatus !== false) {
     console.log('eventSource: disconnected');
   }
-  streamStauts = 'disconnected';
+  streamStatus = false;
   pingAllClients();
 };
 
@@ -73,13 +73,15 @@ onconnect = (ev) => {
       case 'connect':
         const path = ev.data[1];
         const type = ev.data[2];
+        const now = Date.now();
         clients.push({
           port: port,
           path: path,
           type: type,
-          ping: 0,
-          pong: Date.now(),
+          ping: now,
+          pong: 0,
         });
+        port.postMessage(["ping", streamStatus]);
         console.log(`connected: path=${path} type=${type} (len=${clients.length})`);
         break;
 

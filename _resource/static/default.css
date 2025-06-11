@@ -5,3 +5,34 @@
   border-radius: 1em;
   padding: 1em;
 }
+
+#header {
+  font-size: 0.9em;
+  margin: 0.7em 0;
+
+  div {
+    display: block flex;
+    justify-content: space-between;
+
+    > * {
+      display: inline-block;
+    }
+
+    .filename {
+      font-weight: 500;
+    }
+
+    #status {
+      color: #cc0;
+      font-weight: 500;
+
+      &.ok { color: #093; }
+      &.ng { color: #f30; }
+    }
+  }
+}
+
+a {
+  text-decoration: underline;
+  text-underline-offset: .2rem;
+}

@@ -13,7 +13,17 @@
 
 <body>
 
-<h1>{{ .Name }}</h1>
+<section id="header">
+  <div>
+    <span id="breadcrumbs">
+      {{ range .Breadcrumbs }}
+      <a href="{{ .Path }}">{{ .Name }}</a> /
+      {{ end }}
+      <span class="filename">{{ .Name }}</span>
+    </span>
+    <span>Stream: <span id="status">(N/A)</span></span>
+  </div>
+</section>
 
 <section id="main">
   {{ template "main" . }}

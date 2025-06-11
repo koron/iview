@@ -3,8 +3,6 @@
 
   const worker = new SharedWorker('/_/static/fsmonitor-worker.js');
 
-  //let last = Date.now();
-
   worker.port.onmessage = (ev) => {
     switch (ev.data[0]) {
       case 'notify':
@@ -15,11 +13,15 @@
         break;
 
       case 'ping':
-        //console.log(`ping: status=${status} (${Date.now() - last})`);
-        //last = Date.now()
         worker.port.postMessage(['pong']);
         const status = ev.data[1];
-        // TODO: Update the stream status
+        // Update the stream status
+        const el = document.querySelector('#status');
+        if (status !== undefined) {
+          el.innerText = status ? 'OK' : 'NG';
+          el.classList.toggle('ok', status);
+          el.classList.toggle('ng', !status);
+        }
         break;
     }
   };
