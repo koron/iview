@@ -10,10 +10,12 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 
 	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/ast"
 	mdhtml "github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
 	"github.com/koron/iview/internal/templatefs"
@@ -89,16 +91,30 @@ var funcMap = template.FuncMap{
 }
 
 func markdownFunc(src string) template.HTML {
-	dst := markdown.ToHTML([]byte(src),
-		parser.NewWithExtensions(parser.CommonExtensions|parser.AutoHeadingIDs),
-		mdhtml.NewRenderer(mdhtml.RendererOptions{
-			Flags: mdhtml.CommonFlags |
-				mdhtml.NofollowLinks |
-				mdhtml.NoreferrerLinks |
-				mdhtml.NoopenerLinks |
-				mdhtml.HrefTargetBlank |
-				mdhtml.FootnoteReturnLinks}),
-	)
+	doc := markdown.Parse([]byte(src), parser.NewWithExtensions(parser.CommonExtensions|parser.AutoHeadingIDs))
+
+	// For images hosted locally, add the "raw" parameter to the URL to display
+	// the image as is.
+	ast.WalkFunc(doc, func(rawNode ast.Node, entering bool) ast.WalkStatus {
+		switch node := rawNode.(type) {
+		case *ast.Image:
+			u, err := url.Parse(string(node.Destination))
+			if err == nil && u.Scheme == "" && u.Host == "" {
+				u.RawQuery = "raw"
+				node.Destination = []byte(u.String())
+			}
+		}
+		return ast.GoToNext
+	})
+
+	dst := markdown.Render(doc, mdhtml.NewRenderer(mdhtml.RendererOptions{
+		Flags: mdhtml.CommonFlags |
+			mdhtml.NofollowLinks |
+			mdhtml.NoreferrerLinks |
+			mdhtml.NoopenerLinks |
+			mdhtml.HrefTargetBlank |
+			mdhtml.FootnoteReturnLinks,
+	}))
 	return template.HTML(dst)
 }
 
