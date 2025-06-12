@@ -15,7 +15,7 @@ var monitorDir = "."
 
 var monitor = sync.OnceValues(func() (*fsmonitor.Monitor, error) {
 	//log.Printf("fsmonitor start on %s", monitorDir)
-	return fsmonitor.New(context.Background(), monitorDir)
+	return fsmonitor.New(context.Background(), monitorDir, fsmonitor.WithExcludeDirs(".git"))
 })
 
 type fsChangeEvent struct {
