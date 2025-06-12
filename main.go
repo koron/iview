@@ -29,7 +29,6 @@ type Server struct {
 }
 
 func New(dir string) *Server {
-
 	root := http.FS(os.DirFS(dir))
 	return &Server{
 		dir:  dir,
@@ -55,20 +54,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	upath := path.Clean(r.URL.Path)
-	f, err := s.root.Open(upath)
-	if err != nil {
-		log.Printf("failed to open %s: %s", upath, err)
-		w.WriteHeader(s.toHTTPError(err))
-		return
-	}
-	defer f.Close()
-
-	if err = s.serveView(w, r, f); err != nil {
-		log.Printf("failed to serve view %s: %s", upath, err)
-		w.WriteHeader(s.toHTTPError(err))
-		return
-	}
+	s.serveView(w, r)
 }
 
 type Link struct {
@@ -135,11 +121,23 @@ func toMIMEType(name string) string {
 	return "text/plain"
 }
 
-func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) error {
+func (s *Server) serveView(w http.ResponseWriter, r *http.Request) {
+	// Open a file of by path.
+	upath := path.Clean(r.URL.Path)
+	f, err := s.root.Open(upath)
+	if err != nil {
+		log.Printf("failed to open %s: %s", upath, err)
+		w.WriteHeader(s.toHTTPError(err))
+		return
+	}
+	defer f.Close()
+
 	// Examine file metadata
 	fi, err := f.Stat()
 	if err != nil {
-		return err
+		log.Printf("failed to stat %s: %s", upath, err)
+		w.WriteHeader(s.toHTTPError(err))
+		return
 	}
 
 	w.Header().Set("Cache-Control", "no-store")
@@ -148,20 +146,22 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 	if fi.IsDir() {
 		// FIXME: output the directory contents to data.Content.
 		s.base.ServeHTTP(w, r)
-		return nil
+		return
 	}
 
 	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
 
 	if r.Method == "HEAD" {
 		w.WriteHeader(http.StatusOK)
-		return nil
+		return
 	}
 
 	// Load template set for layout
 	tmpl, err := layoutTemplate(templateFS, toMIMEType(fi.Name()))
 	if err != nil {
-		return err
+		log.Printf("failed to determine template for %s: %s", fi.Name(), err)
+		w.WriteHeader(s.toHTTPError(err))
+		return
 	}
 	// Execute the template and output as the response
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -174,7 +174,7 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 		io.WriteString(w, html.EscapeString(err.Error()))
 		io.WriteString(w, "</div>")
 	}
-	return nil
+	return
 }
 
 func (s *Server) toHTTPError(err error) int {
