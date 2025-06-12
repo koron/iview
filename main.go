@@ -142,6 +142,8 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request, f http.File) 
 		return err
 	}
 
+	w.Header().Set("Cache-Control", "no-store")
+
 	// Prepare the content
 	if fi.IsDir() {
 		// FIXME: output the directory contents to data.Content.
