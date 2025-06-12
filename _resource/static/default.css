@@ -42,6 +42,7 @@
 a {
   text-decoration: underline;
   text-underline-offset: .2rem;
+  cursor: pointer;
 
   &, &:visited {
     color: #0000ee;

@@ -11,7 +11,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/koron/iview/internal/templatefs"
@@ -21,13 +23,16 @@ import (
 var embedFS embed.FS
 
 type Server struct {
+	dir  string
 	root http.FileSystem
 	base http.Handler
 }
 
 func New(dir string) *Server {
+
 	root := http.FS(os.DirFS(dir))
 	return &Server{
+		dir:  dir,
 		root: root,
 		base: http.FileServer(root),
 	}
@@ -37,6 +42,16 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// If "raw" query parameter is provided, defer to http.FileServer.
 	if r.URL.Query().Has("raw") {
 		s.base.ServeHTTP(w, r)
+		return
+	}
+
+	// If "edit" parameter is provided, open with editor.
+	if r.URL.Query().Has("edit") {
+		fpath := filepath.FromSlash(strings.TrimLeft(r.URL.Path, "/"))
+		cmd := exec.Command("gvim", fpath)
+		cmd.Dir = s.dir
+		err := cmd.Start()
+		w.WriteHeader(s.toHTTPError(err))
 		return
 	}
 
