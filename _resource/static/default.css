@@ -32,7 +32,18 @@
   }
 }
 
+#footer {
+  display: block flex;
+  justify-content: flex-end;
+
+  font-size: 0.8em;
+}
+
 a {
   text-decoration: underline;
   text-underline-offset: .2rem;
+
+  &, &:visited {
+    color: #0000ee;
+  }
 }
