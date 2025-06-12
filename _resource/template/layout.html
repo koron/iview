@@ -21,6 +21,10 @@
       {{ end }}
       <span class="filename">{{ .Name }}</span>
     </span>
+    <span>Others:
+      <a href="?raw">raw</a>
+      <a onclick="fetch('?edit')">edit</a>
+    </span>
     <span>Stream: <span id="status">(N/A)</span></span>
   </div>
 </section>
@@ -30,10 +34,6 @@
 </section>
 
 <section id="footer">
-  <span>Others:
-    <a href="?raw">raw</a>
-    <a onclick="fetch('?edit')">edit</a>
-  </span>
 </section>
 
 </body>

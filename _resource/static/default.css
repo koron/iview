@@ -12,10 +12,14 @@
 
   div {
     display: block flex;
-    justify-content: space-between;
+    column-gap: 1em;
 
     > * {
       display: inline-block;
+      flex: 0 0 auto;
+    }
+    > #breadcrumbs {
+      flex: 1 0 auto;
     }
 
     .filename {
