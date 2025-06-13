@@ -84,17 +84,22 @@ func (m *Monitor) targetType(entry entryInfo) entryType {
 	return etWatch
 }
 
+func (m *Monitor) addWatch(dir string) {
+	//log.Printf("addWatch: %s", dir)
+	m.watcher.Add(dir)
+}
+
 func (m *Monitor) run(ctx context.Context) {
 	// Add target directory and its sub directories to the watch list
 	// recursively
-	m.watcher.Add(m.rootDir)
+	m.addWatch(m.rootDir)
 	filepath.WalkDir(m.rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		switch m.targetType(d) {
 		case etWatch:
-			m.watcher.Add(path)
+			m.addWatch(path)
 		case etExclude:
 			return filepath.SkipDir
 		}
@@ -119,7 +124,7 @@ func (m *Monitor) run(ctx context.Context) {
 					break
 				}
 				if m.targetType(fi) == etWatch {
-					m.watcher.Add(e.Name)
+					m.addWatch(e.Name)
 				}
 			}
 			// Compose a path of the event target on the HTTP server

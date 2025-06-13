@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/koron/iview/internal/fschanges"
 	"github.com/koron/iview/internal/templatefs"
 )
 
@@ -247,8 +248,8 @@ func main() {
 	}
 	http.Handle("/_/static/", http.StripPrefix("/_/static/", http.FileServerFS(staticFS)))
 
-	monitorDir = dir
-	http.Handle("/_/stream/", http.StripPrefix("/_/stream/", http.HandlerFunc(serveStream)))
+	es := fschanges.New(dir, fschanges.WithExcludeDirs(".git"))
+	http.Handle("/_/stream/", http.StripPrefix("/_/stream/", es))
 
 	// Provide dynamic contents at others
 	http.Handle("/", New(dir))
