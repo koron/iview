@@ -87,7 +87,9 @@ onconnect = (ev) => {
 
       case 'pong':
         const c = getClient(port);
-        c.pong = Date.now();
+        if (c) {
+          c.pong = Date.now();
+        }
         break;
     }
   };
