@@ -35,6 +35,10 @@ setInterval(() => pingAllClients(), PING_INTERVAL);
 
 const eventSource = new EventSource('/_/stream/');
 
+function intersect(a, b) {
+  return a.filter(v => b.includes(v)).length > 0;
+}
+
 eventSource.onmessage = (ev) => {
   if (ev.data.length <= 0) {
     return;
@@ -44,7 +48,7 @@ eventSource.onmessage = (ev) => {
   const data = JSON.parse(ev.data);
   for (const c of clients) {
     // Dispatch a message to watching clients
-    if (data.path == c.path && data.type.filter(v => c.type.includes(v)).length > 0) {
+    if (data.path == c.path && intersect(data.type, c.type)) {
       c.port.postMessage(['notify', data.path, data.type]);
     };
   }

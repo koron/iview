@@ -3,10 +3,14 @@
 
   const worker = new SharedWorker('/_/static/fsmonitor-worker.js');
 
+  function intersect(a, b) {
+    return a.filter(v => b.includes(v)).length > 0;
+  }
+
   worker.port.onmessage = (ev) => {
     switch (ev.data[0]) {
       case 'notify':
-        if (ev.data[1] == location.pathname && INTEREST_EVENTS.filter(v => ev.data[2].includes(v)).length > 0) {
+        if (ev.data[1] == location.pathname && intersect(INTEREST_EVENTS, ev.data[2])) {
           // Using htmx.ajax() can prevent from reloading shared worker
           htmx.ajax('GET', location.pathname, { target: '#main', select: '#main', swap: 'outerHTML' });
         }
