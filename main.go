@@ -38,24 +38,21 @@ func main() {
 		}
 	}
 
-	// Setup template file-system
-	tmplFS, err := fs.Sub(rsrcFS, "template")
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	// Provide static contents at "/_/"
 	staticFS, err := fs.Sub(rsrcFS, "static")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// Provide static contents at "/_/"
 	http.Handle("/_/static/", http.StripPrefix("/_/static/", http.FileServerFS(staticFS)))
 
 	es := fschanges.New(dir, fschanges.WithExcludeDirs(".git"))
 	http.Handle("/_/stream/", http.StripPrefix("/_/stream/", es))
 
 	// Provide dynamic contents at others
+	tmplFS, err := fs.Sub(rsrcFS, "template")
+	if err != nil {
+		log.Fatal(err)
+	}
 	http.Handle("/", New(dir, tmplFS))
 
 	log.Printf("start to listening on %s", addr)

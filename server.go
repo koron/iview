@@ -36,6 +36,24 @@ func New(rootDir string, templateFS fs.FS) *Server {
 	}
 }
 
+const MediaTypeDirectory = "application/vnd.directory"
+
+var extToMIMETypes = map[string]string{
+	".md": "text/markdown",
+}
+
+func (s *Server) fileToMediaType(fi fs.FileInfo, f fs.File) (string, error) {
+	if fi.IsDir() {
+		return MediaTypeDirectory, nil
+	}
+	ext := path.Ext(fi.Name())
+	// TODO: custom media type
+	if mediaType, ok := extToMIMETypes[ext]; ok {
+		return mediaType, nil
+	}
+	return "text/plain", nil
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// If "raw" query parameter is provided, defer to http.FileServer.
 	if r.URL.Query().Has("raw") {
@@ -53,10 +71,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.serveView(w, r)
-}
-
-func (s *Server) serveView(w http.ResponseWriter, r *http.Request) {
 	// Open a file of by path.
 	upath := path.Clean(r.URL.Path)
 	f, err := s.rootFS.Open(upath)
@@ -77,6 +91,13 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Cache-Control", "no-store")
 
+	mediaType, err := s.fileToMediaType(fi, f)
+	if err != nil {
+		w.WriteHeader(s.toHTTPError(err))
+		return
+	}
+	log.Printf("fileToMediaType: %s -> %s", r.URL.Path, mediaType)
+
 	// Prepare the content
 	if fi.IsDir() {
 		// FIXME: output the directory contents to data.Content.
@@ -92,7 +113,7 @@ func (s *Server) serveView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load template set for layout
-	tmpl, err := s.layoutTemplate(s.templateFS, toMIMEType(fi.Name()))
+	tmpl, err := s.layoutTemplate(s.templateFS, mediaType)
 	if err != nil {
 		log.Printf("failed to determine template for %s: %s", fi.Name(), err)
 		w.WriteHeader(s.toHTTPError(err))
@@ -150,10 +171,6 @@ func (s *Server) layoutTemplate(tfs *templatefs.FS, name string) (*template.Temp
 		return nil, err
 	}
 	return layout, nil
-}
-
-var extToMIMETypes = map[string]string{
-	".md": "text/markdown",
 }
 
 func toMIMEType(name string) string {
