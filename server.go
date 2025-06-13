@@ -36,7 +36,7 @@ func New(rootDir string, templateFS fs.FS) *Server {
 	}
 }
 
-const MediaTypeDirectory = "application/vnd.directory"
+const MediaTypeDirectory = "application/vnd.iview.directory"
 
 var extToMIMETypes = map[string]string{
 	".md": "text/markdown",
@@ -89,6 +89,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Path of directory should be end with "/".
+	if fi.IsDir() && !strings.HasSuffix(r.URL.Path, "/") {
+		newPath := r.URL.Path + "/"
+		w.Header().Set("Location", newPath)
+		w.WriteHeader(http.StatusMovedPermanently)
+		return
+	}
+
 	w.Header().Set("Cache-Control", "no-store")
 
 	mediaType, err := s.fileToMediaType(fi, f)
@@ -96,14 +104,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(s.toHTTPError(err))
 		return
 	}
-	log.Printf("fileToMediaType: %s -> %s", r.URL.Path, mediaType)
 
 	// Prepare the content
-	if fi.IsDir() {
-		// FIXME: output the directory contents to data.Content.
-		s.base.ServeHTTP(w, r)
-		return
-	}
 
 	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
 
@@ -212,7 +214,9 @@ func (f *RawFile) Breadcrumbs() ([]Link, error) {
 	if len(dirs) < 2 {
 		return nil, nil
 	}
-	dirs = dirs[:len(dirs)-1]
+	if dirs[len(dirs)-1] == "" {
+		dirs = dirs[:len(dirs)-1]
+	}
 	links := append(make([]Link, 0, len(dirs)), Link{Name: "(Root)", Path: "/"})
 	for _, d := range dirs[1:] {
 		links = append(links, Link{
@@ -220,5 +224,6 @@ func (f *RawFile) Breadcrumbs() ([]Link, error) {
 			Path: links[len(links)-1].Path + d + "/",
 		})
 	}
+	links[len(links)-1].Path = ""
 	return links, nil
 }

@@ -114,7 +114,7 @@ func (m *Monitor) run(ctx context.Context) {
 			m.wg.Done()
 			return
 		case e := <-m.watcher.Events:
-			//log.Printf("%+v", e)
+			//log.Printf("fsnotify detected: %+v", e)
 			switch e.Op {
 			case fsnotify.Create:
 				// Add a newly created directory to the watch list.

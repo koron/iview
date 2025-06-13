@@ -17,11 +17,14 @@
   <div>
     <span id="breadcrumbs">
       {{ range .Breadcrumbs }}
+      {{ if .Path }}
       <a href="{{ .Path }}">{{ .Name }}</a> /
-      {{ end }}
+      {{ else }}
       <span class="filename">{{ .Name }}</span>
+      {{ end }}
+      {{ end }}
     </span>
-    <span>Others:
+    <span>Actions:
       <a href="?raw">raw</a>
       <a onclick="fetch('?edit')">edit</a>
     </span>

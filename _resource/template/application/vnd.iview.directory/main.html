@@ -1,0 +1,64 @@
+<style>
+table.directory {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+
+  thead th {
+    &:nth-child(1) {
+      width: 65%;
+    }
+    &:nth-child(2) {
+      width: 20%;
+    }
+    &:nth-child(3) {
+      width: 15%;
+    }
+  }
+
+  th, td {
+    padding: 0.1em 0.5em;
+    border: 1px solid #e0e0e0;
+  }
+
+  thead th {
+    font-size: 0.85em;
+    font-weight: 500;
+    background-color: #cccccc;
+  }
+
+  tbody tr {
+    &:nth-child(odd) {
+      background-color: #ffffff;
+    }
+    &:nth-child(even) {
+      background-color: #f4f4f4;
+    }
+  }
+
+  td {
+    &.name > a {
+      display: inline-block;
+      width: 100%;
+    }
+    &.size {
+      text-align: right;
+    }
+  }
+}
+</style>
+
+<table class="directory">
+  <thead>
+    <tr>
+      <th>Name</th><th>Modified at</th><th>Size</th>
+    </tr>
+  </thead>
+  {{ range .Readdir -1 }}
+  <tr>
+    <td class="name"><a href="{{ .Name }}{{ if .IsDir }}/{{ end }}">{{ .Name }}{{ if .IsDir }}/{{ end }}</a></td>
+    <td class="datetime">{{ .ModTime.Format "2006/01/02 15:04:05" }}</td>
+    <td class="size">{{ .Size }}</td>
+  </tr>
+  {{ end }}
+</table>
