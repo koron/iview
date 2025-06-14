@@ -1,5 +1,14 @@
 /* default.css */
 
+:root {
+  --anchor-color: #0000ee;
+  --anchor-hover-background-color: #ccccff;
+
+  --table-border-width: 1px;
+  --table-border-style: solid;
+  --table-border-color: #e0e0e0;
+}
+
 #main {
   border: 1px solid lightgray;
   border-radius: 1em;
@@ -49,7 +58,7 @@ a {
   cursor: pointer;
 
   &, &:visited {
-    color: #0000ee;
+    color: var(--anchor-color);
   }
 }
 
@@ -57,8 +66,8 @@ table {
   border-collapse: collapse;
 
   th, td {
-    padding: 0.1em 0.5em;
-    border: 1px solid #e0e0e0;
+    padding: 0.15em 0.6em;
+    border: var(--table-border-width) var(--table-border-style) var(--table-border-color);
   }
 
   thead th {
@@ -74,5 +83,40 @@ table {
     &:nth-child(even) {
       background-color: #f4f4f4;
     }
+  }
+}
+
+.grid-table {
+  display: grid;
+  border-left: var(--table-border-width) var(--table-border-style) var(--table-border-color);
+  border-top: var(--table-border-width) var(--table-border-style) var(--table-border-color);
+
+  > .grid-header {
+    display: contents;
+    font-size: 0.85em;
+    font-weight: 500;
+    > * {
+      background-color: #cccccc;
+      text-align: center;
+    }
+  }
+
+  > .grid-row {
+    display: contents;
+    &:nth-child(odd) > * {
+      background-color: #f4f4f4;
+    }
+    &:nth-child(even) > * {
+      background-color: #ffffff;
+    }
+  }
+
+  > .grid-header > *,
+  > .grid-row > * {
+    display: block;
+    box-sizing: border-box;
+    padding: 0.15em 0.60em;
+    border-right: var(--table-border-width) var(--table-border-style) var(--table-border-color);
+    border-bottom: var(--table-border-width) var(--table-border-style) var(--table-border-color);
   }
 }

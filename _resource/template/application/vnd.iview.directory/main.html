@@ -1,43 +1,34 @@
 <style>
-table.directory {
-  table-layout: fixed;
-  width: 100%;
 
-  thead th {
-    &:nth-child(1) {
-      width: 65%;
-    }
-    &:nth-child(2) {
-      width: 20%;
-    }
-    &:nth-child(3) {
-      width: 15%;
-    }
-  }
+.grid-table.directory {
+  grid-template-columns: 1fr auto auto;
 
-  td {
-    &.name > a {
-      display: inline-block;
-      width: 100%;
+  > .grid-row > * {
+    &.name:hover {
+      background-color: var(--anchor-hover-background-color);
+    }
+    &.modifiedAt {
+      min-width: 20ex;
     }
     &.size {
       text-align: right;
+      min-width: 14ex;
     }
   }
 }
 </style>
 
-<table class="directory">
-  <thead>
-    <tr>
-      <th>Name</th><th>Modified at</th><th>Size</th>
-    </tr>
-  </thead>
+<div class="grid-table directory">
+  <div class="grid-header">
+    <div>Name</div>
+    <div>Modified at</div>
+    <div>Size</div>
+  </div>
   {{ range .Readdir -1 }}
-  <tr>
-    <td class="name"><a href="{{ .Name }}{{ if .IsDir }}/{{ end }}">{{ .Name }}{{ if .IsDir }}/{{ end }}</a></td>
-    <td class="datetime">{{ .ModTime.Format "2006/01/02 15:04:05" }}</td>
-    <td class="size">{{ .Size }}</td>
-  </tr>
-  {{ end }}
-</table>
+  <div class="grid-row">
+    <a class="name" href="{{ .Name }}{{ if .IsDir }}/{{ end }}">{{ .Name }}{{ if .IsDir }}/{{ end }}</a>
+    <div class="modifiedAt">{{ .ModTime.Format "2006/01/02 15:04:05" }}</div>
+    <div class="size">{{ .Size }}</div>
+  </div>
+  {{ end}}
+</div>
