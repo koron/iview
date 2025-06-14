@@ -1,16 +1,28 @@
 (function() {
-  const INTEREST_EVENTS = ['write', 'create'];
+  function isDir() {
+    return location.pathname.endsWith('/');
+  }
+
+  const pathOrPattern = isDir() ? new RegExp('^' + location.pathname + '[^/]*/?$') : location.pathname;
+
+  const interestEvents = isDir() ? [ 'create', 'write', 'remove', 'rename' ] : ['write', 'create'];
+
+  const matchPath = isDir() ? (p) => pathOrPattern.test(p) : (p) => p == pathOrPattern;
 
   const worker = new SharedWorker('/_/static/fsmonitor-worker.js');
 
-  function intersect(a, b) {
+  function isIntersect(a, b) {
     return a.filter(v => b.includes(v)).length > 0;
+  }
+
+  function isInterested(path, events) {
+    return matchPath(path) && isIntersect(interestEvents, events);
   }
 
   worker.port.onmessage = (ev) => {
     switch (ev.data[0]) {
       case 'notify':
-        if (ev.data[1] == location.pathname && intersect(INTEREST_EVENTS, ev.data[2])) {
+        if (isInterested(ev.data[1], ev.data[2])) {
           // Using htmx.ajax() can prevent from reloading shared worker
           htmx.ajax('GET', location.pathname, { target: '#main', select: '#main', swap: 'outerHTML' });
         }
@@ -30,5 +42,5 @@
     }
   };
 
-  worker.port.postMessage(['connect', location.pathname, INTEREST_EVENTS]);
+  worker.port.postMessage(['connect', pathOrPattern, interestEvents]);
 })();

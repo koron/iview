@@ -35,7 +35,7 @@ setInterval(() => pingAllClients(), PING_INTERVAL);
 
 const eventSource = new EventSource('/_/stream/');
 
-function intersect(a, b) {
+function isIntersect(a, b) {
   return a.filter(v => b.includes(v)).length > 0;
 }
 
@@ -48,9 +48,10 @@ eventSource.onmessage = (ev) => {
   const data = JSON.parse(ev.data);
   for (const c of clients) {
     // Dispatch a message to watching clients
-    if (data.path == c.path && intersect(data.type, c.type)) {
+    if (c.pchk(data.path) && isIntersect(data.type, c.type)) {
       c.port.postMessage(['notify', data.path, data.type]);
     };
+    //console.log('c.pchk', data.path, data.type, c.pchk(data.path), c.type);
   }
 };
 
@@ -84,9 +85,10 @@ onconnect = (ev) => {
           type: type,
           ping: now,
           pong: 0,
+          pchk: path instanceof RegExp ? (p) => path.test(p) : (p) => p == path,
         });
         port.postMessage(["ping", streamStatus]);
-        console.log(`connected: path=${path} type=${type} (len=${clients.length})`);
+        console.log('connected:\n', 'path:', path, '\n', 'type:', type, '\n', 'clients.length:', clients.length);
         break;
 
       case 'pong':
