@@ -114,6 +114,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Allow to customize how files are rendered as HTML
+
 	// Load template set for layout
 	tmpl, err := s.layoutTemplate(s.templateFS, mediaType)
 	if err != nil {
@@ -121,6 +123,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(s.toHTTPError(err))
 		return
 	}
+
 	// Execute the template and output as the response
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
