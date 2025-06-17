@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
@@ -15,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/koron/iview/internal/templatefs"
+	"github.com/koron/iview/plugin"
 )
 
 type Server struct {
@@ -36,26 +38,26 @@ func New(rootDir string, templateFS fs.FS) *Server {
 	}
 }
 
-const MediaTypeDirectory = "application/vnd.iview.directory"
-
-var extToMIMETypes = map[string]string{
-	".md": "text/markdown",
-}
-
 func (s *Server) fileToMediaType(f http.File) (string, error) {
 	fi, err := f.Stat()
 	if err != nil {
 		return "", err
 	}
 	if fi.IsDir() {
-		return MediaTypeDirectory, nil
+		return plugin.MediaTypeDirectory, nil
 	}
 	ext := path.Ext(fi.Name())
-	// TODO: custom media type
-	if mediaType, ok := extToMIMETypes[ext]; ok {
-		return mediaType, nil
+	if mediaTypes, ok := plugin.ExtToMediaType[ext]; ok {
+		switch len(mediaTypes) {
+		case 0:
+			return "", fmt.Errorf("no media types found for extension: %s", ext)
+		case 1:
+			return mediaTypes[0], nil
+		default:
+			return plugin.InferMediaType(f, ext, mediaTypes)
+		}
 	}
-	return "text/plain", nil
+	return plugin.MediaTypeDefault, nil
 }
 
 type templateRenderer struct {
@@ -73,7 +75,11 @@ func (s *Server) determineRenderer(f http.File) (HTMLRenderer, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: custom renderer
+	// Custom renderer
+	if r, ok := plugin.MediaTypeToRenderer[mediaType]; ok {
+		return r, nil
+	}
+	// Default layout template renderer.
 	tmpl, err := s.layoutTemplate(mediaType)
 	if err != nil {
 		return nil, err
@@ -187,6 +193,7 @@ func (s *Server) serveRedirect(w http.ResponseWriter, newURL string) {
 	w.WriteHeader(http.StatusMovedPermanently)
 }
 
+// TODO: Move to plugin package
 var funcMap = template.FuncMap{
 	"markdown": markdownFunc,
 }
@@ -219,14 +226,6 @@ func (s *Server) layoutTemplate(mediaType string) (*template.Template, error) {
 		return nil, err
 	}
 	return layout, nil
-}
-
-func toMIMEType(name string) string {
-	ext := path.Ext(name)
-	if typ, ok := extToMIMETypes[ext]; ok {
-		return typ
-	}
-	return "text/plain"
 }
 
 type Link struct {
