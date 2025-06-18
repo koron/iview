@@ -1,8 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"errors"
-	"html"
+	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
@@ -15,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/koron/iview/internal/templatefs"
+	"github.com/koron/iview/plugin"
 )
 
 type Server struct {
@@ -36,25 +38,92 @@ func New(rootDir string, templateFS fs.FS) *Server {
 	}
 }
 
-const MediaTypeDirectory = "application/vnd.iview.directory"
-
-var extToMIMETypes = map[string]string{
-	".md": "text/markdown",
-}
-
-func (s *Server) fileToMediaType(fi fs.FileInfo, f fs.File) (string, error) {
+// detectMediaType detects media type of the file.
+func (s *Server) detectMediaType(f http.File) (string, error) {
+	defer f.Seek(0, io.SeekStart)
+	fi, err := f.Stat()
+	if err != nil {
+		return "", err
+	}
 	if fi.IsDir() {
-		return MediaTypeDirectory, nil
+		return plugin.MediaTypeDirectory, nil
 	}
 	ext := path.Ext(fi.Name())
-	// TODO: custom media type
-	if mediaType, ok := extToMIMETypes[ext]; ok {
-		return mediaType, nil
+	if mediaTypes, ok := plugin.GetMediaType(ext); ok {
+		switch len(mediaTypes) {
+		case 0:
+			return "", fmt.Errorf("no media types found for extension: %s", ext)
+		case 1:
+			return mediaTypes[0], nil
+		default:
+			return plugin.InferMediaType(f, ext, mediaTypes)
+		}
 	}
-	return "text/plain", nil
+	return plugin.MediaTypeDefault, nil
+}
+
+type templateRenderer struct {
+	*template.Template
+}
+
+func (r *templateRenderer) Render(w io.Writer, upath string, f http.File) error {
+	return r.Execute(w, &RawFile{File: f, path: upath})
+}
+
+func (s *Server) determineRenderer(f http.File) (plugin.HTMLRenderer, error) {
+	mediaType, err := s.detectMediaType(f)
+	if err != nil {
+		return nil, err
+	}
+	// Custom renderer
+	if r, ok := plugin.MediaTypeToRenderer[mediaType]; ok {
+		return r, nil
+	}
+	// Default layout template renderer.
+	tmpl, err := s.layoutTemplate(mediaType)
+	if err != nil {
+		return nil, err
+	}
+	return &templateRenderer{tmpl}, nil
+}
+
+func (s *Server) openFile(upath string) (http.File, fs.FileInfo, error) {
+	f, err := s.rootFS.Open(upath)
+	if err != nil {
+		return nil, nil, err
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, nil, err
+	}
+	return f, fi, nil
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	upath := path.Clean(r.URL.Path)
+
+	// Open a file and get its information. Resource existence proof.
+	f, fi, err := s.openFile(upath)
+	if err != nil {
+		// Should be 404 not found
+		s.serveError(w, r, err)
+		return
+	}
+	defer f.Close()
+
+	if r.Method == "HEAD" {
+		w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Path of directory should be end with "/", normalization.
+	if fi.IsDir() && !strings.HasSuffix(r.URL.Path, "/") {
+		s.serveRedirect(w, r.URL.Path+"/")
+		return
+	}
+
 	// If "raw" query parameter is provided, defer to http.FileServer.
 	if r.URL.Query().Has("raw") {
 		s.base.ServeHTTP(w, r)
@@ -63,79 +132,38 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If "edit" parameter is provided, open with editor.
 	if r.URL.Query().Has("edit") {
-		fpath := filepath.FromSlash(strings.TrimLeft(r.URL.Path, "/"))
+		fpath := filepath.FromSlash(strings.TrimLeft(upath, "/"))
 		cmd := exec.Command("gvim", fpath)
 		cmd.Dir = s.rootDir
 		err := cmd.Start()
-		w.WriteHeader(s.toHTTPError(err))
-		return
-	}
-
-	// Open a file of by path.
-	upath := path.Clean(r.URL.Path)
-	f, err := s.rootFS.Open(upath)
-	if err != nil {
-		log.Printf("failed to open %s: %s", upath, err)
-		w.WriteHeader(s.toHTTPError(err))
-		return
-	}
-	defer f.Close()
-
-	// Examine file metadata
-	fi, err := f.Stat()
-	if err != nil {
-		log.Printf("failed to stat %s: %s", upath, err)
-		w.WriteHeader(s.toHTTPError(err))
-		return
-	}
-
-	// Path of directory should be end with "/".
-	if fi.IsDir() && !strings.HasSuffix(r.URL.Path, "/") {
-		newPath := r.URL.Path + "/"
-		w.Header().Set("Location", newPath)
-		w.WriteHeader(http.StatusMovedPermanently)
-		return
-	}
-
-	w.Header().Set("Cache-Control", "no-store")
-
-	mediaType, err := s.fileToMediaType(fi, f)
-	if err != nil {
-		w.WriteHeader(s.toHTTPError(err))
-		return
-	}
-
-	// Prepare the content
-
-	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
-
-	if r.Method == "HEAD" {
+		if err != nil {
+			s.serveError(w, r, err)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	// TODO: Allow to customize how files are rendered as HTML
-
-	// Load template set for layout
-	tmpl, err := s.layoutTemplate(s.templateFS, mediaType)
+	// Determine renderer for the file.
+	renderer, err := s.determineRenderer(f)
 	if err != nil {
-		log.Printf("failed to determine template for %s: %s", fi.Name(), err)
-		w.WriteHeader(s.toHTTPError(err))
+		s.serveError(w, r, err)
 		return
 	}
 
-	// Execute the template and output as the response
+	// Render as HTML
+	bb := &bytes.Buffer{}
+	err = renderer.Render(bb, upath, f)
+	if err != nil {
+		s.serveError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	err = tmpl.Execute(w, &RawFile{File: f, path: r.URL.Path})
-	if err != nil {
-		log.Printf("template failure: %s", err)
-		io.WriteString(w, "<h1>Template Failure</h1>")
-		io.WriteString(w, "<div>")
-		io.WriteString(w, html.EscapeString(err.Error()))
-		io.WriteString(w, "</div>")
-	}
-	return
+	io.Copy(w, bb)
 }
 
 func (s *Server) toHTTPError(err error) int {
@@ -148,18 +176,28 @@ func (s *Server) toHTTPError(err error) int {
 	return http.StatusInternalServerError
 }
 
-var funcMap = template.FuncMap{
-	"markdown": markdownFunc,
+func (s *Server) serveError(w http.ResponseWriter, r *http.Request, err error) {
+	statusCode := s.toHTTPError(err)
+	log.Printf("request failed: %d %s %s: %s", statusCode, r.Method, r.URL, err)
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(statusCode)
+	io.WriteString(w, err.Error())
 }
 
-var templatefsOptions = []templatefs.Option{
-	templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
-		return tmpl.Funcs(funcMap), nil
-	}),
+func (s *Server) serveRedirect(w http.ResponseWriter, newURL string) {
+	w.Header().Set("Location", newURL)
+	w.WriteHeader(http.StatusMovedPermanently)
 }
 
-func (s *Server) layoutTemplate(tfs *templatefs.FS, name string) (*template.Template, error) {
-	layout, err := tfs.Template("layout.html", templatefsOptions...)
+func (s *Server) layoutTemplate(mediaType string) (*template.Template, error) {
+	opts := []templatefs.Option{
+		templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
+			return tmpl.Funcs(plugin.GetTemplateFuncMap()), nil
+		}),
+	}
+	layout, err := s.templateFS.Template("layout.html", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +205,7 @@ func (s *Server) layoutTemplate(tfs *templatefs.FS, name string) (*template.Temp
 	if err != nil {
 		return nil, err
 	}
-	main, err := tfs.Template(path.Join(name, "main.html"), templatefsOptions...)
+	main, err := s.templateFS.Template(path.Join(mediaType, "main.html"), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -176,14 +214,6 @@ func (s *Server) layoutTemplate(tfs *templatefs.FS, name string) (*template.Temp
 		return nil, err
 	}
 	return layout, nil
-}
-
-func toMIMEType(name string) string {
-	ext := path.Ext(name)
-	if typ, ok := extToMIMETypes[ext]; ok {
-		return typ
-	}
-	return "text/plain"
 }
 
 type Link struct {

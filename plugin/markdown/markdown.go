@@ -1,4 +1,5 @@
-package main
+// Package markdown provides markdown plugin for iview.
+package markdown
 
 import (
 	"html/template"
@@ -8,9 +9,15 @@ import (
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
+	"github.com/koron/iview/plugin"
 )
 
-func markdownFunc(src string) template.HTML {
+func init() {
+	plugin.AddMediaType("text/markdown", ".md", ".mkd", ".markdown")
+	plugin.AddTemplateFunc("markdown", ToHTML)
+}
+
+func ToHTML(src string) template.HTML {
 	doc := markdown.Parse([]byte(src), parser.NewWithExtensions(parser.CommonExtensions|parser.AutoHeadingIDs))
 
 	// For images hosted locally, add the "raw" parameter to the URL to display
@@ -32,7 +39,7 @@ func markdownFunc(src string) template.HTML {
 			html.NofollowLinks |
 			html.NoreferrerLinks |
 			html.NoopenerLinks |
-			html.HrefTargetBlank |
+			//html.HrefTargetBlank |
 			html.FootnoteReturnLinks,
 	}))
 	return template.HTML(dst)
