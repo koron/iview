@@ -38,7 +38,9 @@ func New(rootDir string, templateFS fs.FS) *Server {
 	}
 }
 
-func (s *Server) fileToMediaType(f http.File) (string, error) {
+// detectMediaType detects media type of the file.
+func (s *Server) detectMediaType(f http.File) (string, error) {
+	defer f.Seek(0, io.SeekStart)
 	fi, err := f.Stat()
 	if err != nil {
 		return "", err
@@ -47,7 +49,7 @@ func (s *Server) fileToMediaType(f http.File) (string, error) {
 		return plugin.MediaTypeDirectory, nil
 	}
 	ext := path.Ext(fi.Name())
-	if mediaTypes, ok := plugin.ExtToMediaType[ext]; ok {
+	if mediaTypes, ok := plugin.GetMediaType(ext); ok {
 		switch len(mediaTypes) {
 		case 0:
 			return "", fmt.Errorf("no media types found for extension: %s", ext)
@@ -68,10 +70,8 @@ func (r *templateRenderer) Render(w io.Writer, upath string, f http.File) error 
 	return r.Execute(w, &RawFile{File: f, path: upath})
 }
 
-var _ HTMLRenderer = (*templateRenderer)(nil)
-
-func (s *Server) determineRenderer(f http.File) (HTMLRenderer, error) {
-	mediaType, err := s.fileToMediaType(f)
+func (s *Server) determineRenderer(f http.File) (plugin.HTMLRenderer, error) {
+	mediaType, err := s.detectMediaType(f)
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +164,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	io.Copy(w, bb)
-
-	return
 }
 
 func (s *Server) toHTTPError(err error) int {
@@ -193,23 +191,13 @@ func (s *Server) serveRedirect(w http.ResponseWriter, newURL string) {
 	w.WriteHeader(http.StatusMovedPermanently)
 }
 
-// TODO: Move to plugin package
-var funcMap = template.FuncMap{
-	"markdown": markdownFunc,
-}
-
-type HTMLRenderer interface {
-	Render(w io.Writer, upath string, f http.File) error
-}
-
-var templatefsOptions = []templatefs.Option{
-	templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
-		return tmpl.Funcs(funcMap), nil
-	}),
-}
-
 func (s *Server) layoutTemplate(mediaType string) (*template.Template, error) {
-	layout, err := s.templateFS.Template("layout.html", templatefsOptions...)
+	opts := []templatefs.Option{
+		templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
+			return tmpl.Funcs(plugin.GetTemplateFuncMap()), nil
+		}),
+	}
+	layout, err := s.templateFS.Template("layout.html", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +205,7 @@ func (s *Server) layoutTemplate(mediaType string) (*template.Template, error) {
 	if err != nil {
 		return nil, err
 	}
-	main, err := s.templateFS.Template(path.Join(mediaType, "main.html"), templatefsOptions...)
+	main, err := s.templateFS.Template(path.Join(mediaType, "main.html"), opts...)
 	if err != nil {
 		return nil, err
 	}
