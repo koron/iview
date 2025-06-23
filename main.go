@@ -47,7 +47,6 @@ func main() {
 
 	// Handle favicon.ico differently using redirects.
 	http.Handle("/favicon.ico", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("HERE")
 		http.Redirect(w, r, "/_/static/favicon.ico", http.StatusMovedPermanently)
 	}))
 
