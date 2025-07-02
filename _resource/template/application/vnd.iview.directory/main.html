@@ -1,6 +1,8 @@
 <style>
 
 .grid-table.directory {
+  --sub-font-size: 0.85rem;
+
   grid-template-columns: 1fr auto auto;
 
   > .grid-row > * {
@@ -9,10 +11,16 @@
     }
     &.modifiedAt {
       min-width: 20ex;
+      font-size: var(--sub-font-size);
+      display: flex;
+      align-items: center;
     }
     &.size {
-      text-align: right;
       min-width: 14ex;
+      font-size: var(--sub-font-size);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
     }
   }
 }
@@ -26,7 +34,9 @@
   </div>
   {{ range .Readdir -1 }}
   <div class="grid-row">
-    <a class="name" href="{{ .Name }}{{ if .IsDir }}/{{ end }}">{{ .Name }}{{ if .IsDir }}/{{ end }}</a>
+    <div class="name">
+      <a href="{{ .Name }}{{ if .IsDir }}/{{ end }}">{{ .Name }}{{ if .IsDir }}/{{ end }}</a>
+    </div>
     <div class="modifiedAt">{{ .ModTime.Format "2006/01/02 15:04:05" }}</div>
     <div class="size">{{ .Size }}</div>
   </div>
