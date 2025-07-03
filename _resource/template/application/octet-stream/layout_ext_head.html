@@ -1,0 +1,39 @@
+<style>
+.hexdump {
+  display: grid;
+  grid-template-columns: 5ex repeat(16, 3ex) min-content;
+
+  .row {
+    display: contents;
+    > * {
+      display: inline-block;
+      text-align: center;
+    }
+  }
+
+  line-height: 1.3em;
+
+  .head > * {
+    background-color: #ccc;
+  }
+  .addr {
+    background-color: #e4e4e4;
+  }
+  .ascii {
+    background-color: #e4e4e4;
+    font-family: monospace;
+  }
+
+  .row:not(.head) {
+    > *:nth-child(5),
+    > *:nth-child(9),
+    > *:nth-child(13) {
+      border-right: 1px solid #ccc;
+    }
+    &:nth-child(odd) > *:not(.addr, .ascii) {
+      background-color: #f4f4f4;
+    }
+  }
+
+}
+</style>

@@ -1,10 +1,25 @@
-<pre>
-addr  +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F
------------------------------------------------------
-{{- range $i, $d := readbytes . 512 }}
-{{- $addr := printf "%04X" $i }}
-{{- if eq (slice $addr 3 4) "0" }}
-{{ $addr }} {{ end -}}
-{{ printf " %02X" $d -}}
-{{- end }}
-</pre>
+{{ $root := . }}
+<div class="hexdump">
+  <div class="head row">
+    <span>Addr</span>
+    <span>+0</span><span>+1</span><span>+2</span><span>+3</span>
+    <span>+4</span><span>+5</span><span>+6</span><span>+7</span>
+    <span>+8</span><span>+9</span><span>+A</span><span>+B</span>
+    <span>+C</span><span>+D</span><span>+E</span><span>+F</span>
+    <span>ASCII</span>
+  </div>
+  {{ range $i := step 0 256 16 }}
+  <div class="row">
+    <span class="addr">{{ printf "%04X" $i }}</span>
+    {{ $hunk := readbytes $root 16 -}}
+    {{ range $j, $d := $hunk -}}
+    <span>{{ printf "%02X" $d }}</span>
+    {{- end -}}
+    {{ range $j := step (len $hunk) 16 1 -}}
+    <span></span>
+    {{- end }}
+    <span class="ascii">{{ ascii $hunk }}</span>
+    {{- if lt (len $hunk) 16 }}{{ break }}{{ end }}
+  </div>
+  {{- end }}
+</div>
