@@ -61,7 +61,7 @@ func (s *Server) detectMediaType(f http.File) (string, error) {
 		}
 	}
 
-	// TODO: Reads up to 4096 bytes (4KiB)  and verifies that it is UTF-8 text.
+	// Reads up to 4096 bytes (4KiB)  and verifies that it is UTF-8 text.
 	b := make([]byte, 4096)
 	n, err := f.Read(b)
 	if err != nil && !errors.Is(err, io.EOF) {
@@ -196,7 +196,12 @@ func (s *Server) serveRedirect(w http.ResponseWriter, newURL string) {
 func (s *Server) layoutTemplate(mediaType string) (*templateRenderer, error) {
 	opts := []templatefs.Option{
 		templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
-			return tmpl.Funcs(plugin.GetTemplateFuncMap()), nil
+			tmpl.Funcs(plugin.GetTemplateGlobalFuncMap())
+			funcMap := plugin.GetTemplateMediaTypeFuncMap(mediaType)
+			if funcMap == nil {
+				return tmpl, nil
+			}
+			return tmpl.Funcs(funcMap), nil
 		}),
 	}
 

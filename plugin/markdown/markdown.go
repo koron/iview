@@ -14,7 +14,7 @@ import (
 
 func init() {
 	plugin.AddMediaType("text/markdown", ".md", ".mkd", ".markdown")
-	plugin.AddTemplateFunc("markdown", ToHTML)
+	plugin.AddTemplateGlobalFunc("markdown", ToHTML)
 }
 
 func ToHTML(src string) template.HTML {

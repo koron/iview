@@ -49,13 +49,23 @@ type HTMLRenderer interface {
 
 var MediaTypeToRenderer = map[string]HTMLRenderer{}
 
-var funcMap = template.FuncMap{}
+var globalFuncMap = template.FuncMap{}
 
-func GetTemplateFuncMap() template.FuncMap {
-	return funcMap
+func GetTemplateGlobalFuncMap() template.FuncMap {
+	return globalFuncMap
 }
 
-func AddTemplateFunc(name string, fn any) {
+func AddTemplateGlobalFunc(name string, fn any) {
 	// TODO: detect override of function.
-	funcMap[name] = fn
+	globalFuncMap[name] = fn
+}
+
+var mediaTypeFuncMap = map[string]template.FuncMap{}
+
+func GetTemplateMediaTypeFuncMap(mediaType string) template.FuncMap {
+	return mediaTypeFuncMap[mediaType]
+}
+
+func AddTemplateMediaTypeFuncMap(mediaType string, funcMap template.FuncMap) {
+	mediaTypeFuncMap[mediaType] = funcMap
 }
