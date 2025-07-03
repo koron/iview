@@ -62,14 +62,6 @@ func (s *Server) detectMediaType(f http.File) (string, error) {
 	return plugin.MediaTypeDefault, nil
 }
 
-type templateRenderer struct {
-	*template.Template
-}
-
-func (r *templateRenderer) Render(w io.Writer, upath string, f http.File) error {
-	return r.Execute(w, &RawFile{File: f, path: upath})
-}
-
 func (s *Server) determineRenderer(f http.File) (plugin.HTMLRenderer, error) {
 	mediaType, err := s.detectMediaType(f)
 	if err != nil {
@@ -80,11 +72,7 @@ func (s *Server) determineRenderer(f http.File) (plugin.HTMLRenderer, error) {
 		return r, nil
 	}
 	// Default layout template renderer.
-	tmpl, err := s.layoutTemplate(mediaType)
-	if err != nil {
-		return nil, err
-	}
-	return &templateRenderer{tmpl}, nil
+	return s.layoutTemplate(mediaType)
 }
 
 func (s *Server) openFile(upath string) (http.File, fs.FileInfo, error) {
@@ -191,12 +179,14 @@ func (s *Server) serveRedirect(w http.ResponseWriter, newURL string) {
 	w.WriteHeader(http.StatusMovedPermanently)
 }
 
-func (s *Server) layoutTemplate(mediaType string) (*template.Template, error) {
+func (s *Server) layoutTemplate(mediaType string) (*templateRenderer, error) {
 	opts := []templatefs.Option{
 		templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
 			return tmpl.Funcs(plugin.GetTemplateFuncMap()), nil
 		}),
 	}
+
+	// Load layout template.
 	layout, err := s.templateFS.Template("layout.html", opts...)
 	if err != nil {
 		return nil, err
@@ -205,6 +195,8 @@ func (s *Server) layoutTemplate(mediaType string) (*template.Template, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Load main contents template.
 	main, err := s.templateFS.Template(path.Join(mediaType, "main.html"), opts...)
 	if err != nil {
 		return nil, err
@@ -213,50 +205,44 @@ func (s *Server) layoutTemplate(mediaType string) (*template.Template, error) {
 	if err != nil {
 		return nil, err
 	}
-	return layout, nil
-}
 
-type Link struct {
-	Name string
-	Path string
-}
-
-type RawFile struct {
-	http.File
-	path string
-}
-
-func (f *RawFile) Name() (any, error) {
-	fi, err := f.Stat()
+	// Load layout extensions by media type
+	ext, err := s.loadLayoutExtensions(mediaType)
 	if err != nil {
 		return nil, err
 	}
-	return fi.Name(), nil
+
+	return &templateRenderer{
+		Template: layout,
+		ext:      ext,
+	}, nil
 }
 
-func (f *RawFile) Content() (any, error) {
+func loadAsHTML(fsys fs.FS, name string) (template.HTML, error) {
+	f, err := fsys.Open(name)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return "", nil
+		}
+		return "", err
+	}
+	defer f.Close()
 	b, err := io.ReadAll(f)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return string(b), nil
+	return template.HTML(b), nil
 }
 
-func (f *RawFile) Breadcrumbs() ([]Link, error) {
-	dirs := strings.Split(f.path, "/")
-	if len(dirs) < 2 {
+func (s *Server) loadLayoutExtensions(mediaType string) (*LayoutExtensions, error) {
+	head, err := loadAsHTML(s.templateFS, path.Join(mediaType, "layout_ext_head.html"))
+	if err != nil {
+		return nil, err
+	}
+	if head == "" {
 		return nil, nil
 	}
-	if dirs[len(dirs)-1] == "" {
-		dirs = dirs[:len(dirs)-1]
-	}
-	links := append(make([]Link, 0, len(dirs)), Link{Name: "(Root)", Path: "/"})
-	for _, d := range dirs[1:] {
-		links = append(links, Link{
-			Name: d,
-			Path: links[len(links)-1].Path + d + "/",
-		})
-	}
-	links[len(links)-1].Path = ""
-	return links, nil
+	return &LayoutExtensions{
+		Head: head,
+	}, nil
 }
