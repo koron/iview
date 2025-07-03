@@ -14,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/koron/iview/internal/templatefs"
 	"github.com/koron/iview/plugin"
@@ -59,6 +60,19 @@ func (s *Server) detectMediaType(f http.File) (string, error) {
 			return plugin.InferMediaType(f, ext, mediaTypes)
 		}
 	}
+
+	// TODO: Reads up to 4096 bytes (4KiB)  and verifies that it is UTF-8 text.
+	b := make([]byte, 4096)
+	n, err := f.Read(b)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return "", err
+	}
+	for i := 0; i < utf8.UTFMax; i++ {
+		if utf8.Valid(b[:n-i]) {
+			return plugin.MediaTypePlainText, nil
+		}
+	}
+
 	return plugin.MediaTypeDefault, nil
 }
 
@@ -186,18 +200,23 @@ func (s *Server) layoutTemplate(mediaType string) (*templateRenderer, error) {
 		}),
 	}
 
+	// Load main contents template.
+	main, err := s.templateFS.Template(path.Join(mediaType, "main.html"), opts...)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, fmt.Errorf("media type: %s is not supported: %w", mediaType, err)
+		}
+		return nil, err
+	}
+
 	// Load layout template.
 	layout, err := s.templateFS.Template("layout.html", opts...)
 	if err != nil {
 		return nil, err
 	}
-	layout, err = layout.Clone()
-	if err != nil {
-		return nil, err
-	}
 
-	// Load main contents template.
-	main, err := s.templateFS.Template(path.Join(mediaType, "main.html"), opts...)
+	// Merge layout and main templates.
+	layout, err = layout.Clone()
 	if err != nil {
 		return nil, err
 	}

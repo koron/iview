@@ -51,6 +51,18 @@ func (f *TemplateData) Content() (any, error) {
 	return string(b), nil
 }
 
+func (f *TemplateData) ContentBytes(nbytes int) (any, error) {
+	if nbytes < 0 {
+		return io.ReadAll(f)
+	}
+	b := make([]byte, nbytes)
+	n, err := f.Read(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+
 func (f *TemplateData) Breadcrumbs() ([]Link, error) {
 	dirs := strings.Split(f.path, "/")
 	if len(dirs) < 2 {

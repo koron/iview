@@ -8,8 +8,11 @@ import (
 )
 
 const (
-	MediaTypeDefault   = "text/plain"
+	MediaTypeBinary    = "application/octet-stream"
 	MediaTypeDirectory = "application/vnd.iview.directory"
+	MediaTypePlainText = "text/plain"
+
+	MediaTypeDefault = MediaTypeBinary
 )
 
 var mediaTypesMap = map[string][]string{
