@@ -4,7 +4,7 @@
     <div>Modified at</div>
     <div>Size</div>
   </div>
-  {{ range .Readdir -1 }}
+  {{ range .Readdir -1 -}}
   <div class="grid-row">
     <div class="name">
       <a href="{{ .Name }}{{ if .IsDir }}/{{ end }}">{{ .Name }}{{ if .IsDir }}/{{ end }}</a>
@@ -12,5 +12,5 @@
     <div class="modifiedAt">{{ .ModTime.Format "2006/01/02 15:04:05" }}</div>
     <div class="size">{{ .Size }}</div>
   </div>
-  {{ end}}
+  {{- end }}
 </div>
