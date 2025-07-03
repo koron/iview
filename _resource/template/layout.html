@@ -9,9 +9,9 @@
 <link rel="stylesheet" type="text/css" href="/_/static/default.css">
 <script src="/_/static/thirdparty/htmx-2.0.4.min.js"></script>
 <script async src="/_/static/fsmonitor.js"></script>
-{{ if .LayoutExt -}}
+{{ if and .LayoutExt .LayoutExt.Head -}}
   {{ .LayoutExt.Head }}
-{{- end }}
+{{ end -}}
 </head>
 
 <body>

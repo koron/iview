@@ -1,0 +1,26 @@
+<style>
+.grid-table.directory {
+  --sub-font-size: 0.85rem;
+
+  grid-template-columns: 1fr auto auto;
+
+  > .grid-row > * {
+    &.name:hover {
+      background-color: var(--anchor-hover-background-color);
+    }
+    &.modifiedAt {
+      min-width: 20ex;
+      font-size: var(--sub-font-size);
+      display: flex;
+      align-items: center;
+    }
+    &.size {
+      min-width: 14ex;
+      font-size: var(--sub-font-size);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+  }
+}
+</style>
