@@ -6,6 +6,17 @@
 
 iview is an HTTP server that serves the contents of a local directory. When serving, it applies templates and filters depending on the file type. This makes it function as a pseudo file explorer or file viewer. Additionally, the file viewer has an auto-reload feature.
 
+## Direcotry Structure for Resources
+
+The resource direcotry (`_resource`) provides two `fs.FS`s: `static` and `template`
+
+* `static` directory provides static resources.
+* `template` direcotry provides templates.
+    * `layout.html` is the root layout template.
+    * others: templates for media types.
+
+The resource directory is normally exposed via `embed.FS`, but the physical file system can be used for debugging purposes using the `-rsrc` option.
+
 ## Developer Resources
 
 *   Inspect shared workers in Chrome
