@@ -2,11 +2,13 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"flag"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/koron/iview/internal/fschanges"
 )
@@ -14,23 +16,50 @@ import (
 //go:embed _resource
 var embedFS embed.FS
 
-func main() {
-	var (
-		addr string
-		dir  string
-		rsrc string
-	)
+var (
+	flagAddr   string
+	flagDir    string
+	flagRsrc   string
+	flagEditor string
+)
 
-	flag.StringVar(&addr, "addr", "localhost:8000", `address that hosts the HTTP server`)
-	flag.StringVar(&dir, "dir", ".", `root directory for the content to host`)
-	flag.StringVar(&rsrc, "rsrc", "", `resource directory for debug`)
+func editorCommand() (string, error) {
+	// TODO: parse special placeholders: "%file", "%line" for flagEditor and
+	// IVIEW_EDITOR.
+	if flagEditor != "" {
+		return flagEditor, nil
+	}
+	if s := os.Getenv("IVIEW_EDITOR"); s != "" {
+		return s, nil
+	}
+	if s := os.Getenv("EDITOR"); s != "" {
+		return s, nil
+	}
+	switch runtime.GOOS {
+	case "darwin":
+		return "open", nil
+	case "freebsd":
+		return "xdg-open", nil
+	case "linux":
+		return "xdg-open", nil
+	case "windows":
+		return "notepad", nil
+	}
+	return "", errors.New("no default editors. please set environment variables EDITOR, IVIEW_EDITOR, or -editor flag on start up")
+}
+
+func main() {
+	flag.StringVar(&flagAddr, "addr", "localhost:8000", `address that hosts the HTTP server`)
+	flag.StringVar(&flagDir, "dir", ".", `root directory for the content to host`)
+	flag.StringVar(&flagRsrc, "rsrc", "", `resource directory for debug`)
+	flag.StringVar(&flagEditor, "editor", "", `editor to open the file`)
 	flag.Parse()
 
 	var err error
 	var rsrcFS fs.FS
 
-	if rsrc != "" {
-		rsrcFS = os.DirFS(rsrc)
+	if flagRsrc != "" {
+		rsrcFS = os.DirFS(flagRsrc)
 	} else {
 		rsrcFS, err = fs.Sub(embedFS, "_resource")
 		if err != nil {
@@ -50,7 +79,7 @@ func main() {
 		http.Redirect(w, r, "/_/static/favicon.ico", http.StatusMovedPermanently)
 	}))
 
-	es := fschanges.New(dir, fschanges.WithExcludeDirs(".git"))
+	es := fschanges.New(flagDir, fschanges.WithExcludeDirs(".git"))
 	http.Handle("/_/stream/", http.StripPrefix("/_/stream/", es))
 
 	// Provide dynamic contents at others
@@ -58,8 +87,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	http.Handle("/", New(dir, tmplFS))
+	http.Handle("/", New(flagDir, tmplFS))
 
-	log.Printf("start to listening on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	log.Printf("start to listening on %s", flagAddr)
+	log.Fatal(http.ListenAndServe(flagAddr, nil))
 }

@@ -135,9 +135,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// If "edit" parameter is provided, open with editor.
 	if r.URL.Query().Has("edit") {
 		fpath := filepath.FromSlash(strings.TrimLeft(upath, "/"))
-		cmd := exec.Command("gvim", fpath)
+		editor, err := editorCommand()
+		if err != nil {
+			s.serveError(w, r, err)
+			return
+		}
+		cmd := exec.Command(editor, fpath)
 		cmd.Dir = s.rootDir
-		err := cmd.Start()
+		err = cmd.Start()
 		if err != nil {
 			s.serveError(w, r, err)
 			return

@@ -10,12 +10,16 @@ iview is an HTTP server that serves the contents of a local directory. When serv
 
 The resource direcotry (`_resource`) provides two `fs.FS`s: `static` and `template`
 
-* `static` directory provides static resources.
-* `template` direcotry provides templates.
-    * `layout.html` is the root layout template.
-    * others: templates for media types.
+*   `static` directory provides static resources.
+*   `template` direcotry provides templates.
+    *   `layout.html` is the root layout template.
+    *   others: templates for media types.
 
 The resource directory is normally exposed via `embed.FS`, but the physical file system can be used for debugging purposes using the `-rsrc` option.
+
+## Misc.
+
+*   You can open a file in an editor.  The editor can be specified with the `-editor` flag, or the environment variables `IVIEW_EDITOR` and `EDITOR`.  The priority is as described above.
 
 ## Developer Resources
 
