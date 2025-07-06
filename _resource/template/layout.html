@@ -7,6 +7,8 @@
 <title>{{ .Name }} | iview</title>
 
 <link href="/_/static/default.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" href="/_/static/thirdparty/material-symbols.css" />
+<link rel="preload" href="/_/static/thirdparty/material-symbols.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
 
 <script src="/_/static/thirdparty/htmx-2.0.4.min.js"></script>
 <script async src="/_/static/fsmonitor.js"></script>
@@ -27,6 +29,9 @@
       <span class="filename">{{ .Name }}</span>
       {{- end -}}
       {{ end }}
+      <button class="action_icon" onclick="navigator.clipboard.writeText('.{{ .Path }}')">
+        <span class="material-symbols">content_copy</span>
+      </button>
     </span>
     <span>Actions:
       <a href="?raw">raw</a>

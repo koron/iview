@@ -43,6 +43,10 @@ func (f *TemplateData) Name() (any, error) {
 	return fi.Name(), nil
 }
 
+func (f *TemplateData) Path() (any, error) {
+	return f.path, nil
+}
+
 func (f *TemplateData) Content() (any, error) {
 	b, err := io.ReadAll(f)
 	if err != nil {

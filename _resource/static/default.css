@@ -62,6 +62,14 @@ a {
   }
 }
 
+button.action_icon {
+  cursor: pointer;
+  background-color: inherit;
+  border: none;
+  color: #666;
+  padding: 0 0.250em;
+}
+
 table {
   border-collapse: collapse;
 

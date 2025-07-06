@@ -33,7 +33,7 @@ The resource directory is normally exposed via `embed.FS`, but the physical file
 
 *   [sindresorhus/github-markdown-css](https://github.com/sindresorhus/github-markdown-css)
 
-*   [Material Symbols](https://fonts.google.com/icons?hl=ja&icon.query=document&icon.set=Material+Symbols)
+*   [Material Symbols](https://fonts.google.com/icons?icon.set=Material+Symbols)
 
     *   Guide: <https://developers.google.com/fonts/docs/material_symbols>
     *   CSS base `_resource/static/thirdparty/material-symbols.css`:  
