@@ -32,3 +32,11 @@ The resource directory is normally exposed via `embed.FS`, but the physical file
 *   [**HTMX** Javascript API](https://htmx.org/api/)
 
 *   [sindresorhus/github-markdown-css](https://github.com/sindresorhus/github-markdown-css)
+
+*   [Material Symbols](https://fonts.google.com/icons?hl=ja&icon.query=document&icon.set=Material+Symbols)
+
+    *   Guide: <https://developers.google.com/fonts/docs/material_symbols>
+    *   CSS base `_resource/static/thirdparty/material-symbols.css`:  
+        <https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined>
+    *   Font file `_resource/static/thirdparty/material-symbols.woff2`:  
+        <https://fonts.gstatic.com/s/materialsymbolsoutlined/v257/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOej.woff2>
