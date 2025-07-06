@@ -7,6 +7,7 @@
   {{ range .Readdir -1 -}}
   <div class="grid-row">
     <div class="name">
+      <span class="material-symbols">{{ if .IsDir }}folder{{ else }}draft{{ end }}</span>
       <a href="{{ .Name }}{{ if .IsDir }}/{{ end }}">{{ .Name }}{{ if .IsDir }}/{{ end }}</a>
     </div>
     <div class="modifiedAt">{{ .ModTime.Format "2006/01/02 15:04:05" }}</div>
