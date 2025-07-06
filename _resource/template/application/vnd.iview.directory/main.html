@@ -4,14 +4,25 @@
     <div>Modified at</div>
     <div>Size</div>
   </div>
-  {{ range .Readdir -1 -}}
-  <div class="grid-row">
+  {{ $entries := .Readdir -1 }}
+  {{ range $entries }}{{ if .IsDir -}}
+  <div class="grid-row folder">
     <div class="name">
-      <span class="material-symbols">{{ if .IsDir }}folder{{ else }}draft{{ end }}</span>
-      <a href="{{ .Name }}{{ if .IsDir }}/{{ end }}">{{ .Name }}{{ if .IsDir }}/{{ end }}</a>
+      <span class="material-symbols">folder</span>
+      <a href="{{ .Name }}/">{{ .Name }}/</a>
     </div>
     <div class="modifiedAt">{{ .ModTime.Format "2006/01/02 15:04:05" }}</div>
     <div class="size">{{ .Size }}</div>
   </div>
-  {{- end }}
+  {{- end }}{{ end }}
+  {{ range $entries }}{{ if not .IsDir -}}
+  <div class="grid-row file">
+    <div class="name">
+      <span class="material-symbols">draft</span>
+      <a href="{{ .Name }}">{{ .Name }}</a>
+    </div>
+    <div class="modifiedAt">{{ .ModTime.Format "2006/01/02 15:04:05" }}</div>
+    <div class="size">{{ .Size }}</div>
+  </div>
+  {{- end }}{{ end }}
 </div>
