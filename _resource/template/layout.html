@@ -12,6 +12,7 @@
 
 <script src="/_/static/thirdparty/htmx-2.0.4.min.js"></script>
 <script async src="/_/static/fsmonitor.js"></script>
+<script async src="/_/static/toast.js"></script>
 {{ if and .LayoutExt .LayoutExt.Head -}}
   {{ .LayoutExt.Head }}
 {{ end -}}
@@ -29,7 +30,7 @@
       <span class="filename">{{ .Name }}</span>
       {{- end -}}
       {{ end }}
-      <button class="action_icon" onclick="navigator.clipboard.writeText('.{{ .Path }}')">
+      <button class="action_icon" onclick="navigator.clipboard.writeText('.{{ .Path }}'); showToast('Copied!', event)">
         <span class="material-symbols">content_copy</span>
       </button>
     </span>

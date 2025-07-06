@@ -62,6 +62,16 @@ a {
   }
 }
 
+.toast {
+  background-color: #0009;
+  color: #fff;
+  border-radius: 4px;
+  padding: 0.625em 1em;
+  z-index: 9999;
+  position: fixed;
+  transition: opacity 0.25s ease-in-out;
+}
+
 button.action_icon {
   cursor: pointer;
   background-color: inherit;

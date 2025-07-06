@@ -44,6 +44,13 @@ func (f *TemplateData) Name() (any, error) {
 }
 
 func (f *TemplateData) Path() (any, error) {
+	fi, err := f.Stat()
+	if err != nil {
+		return "", err
+	}
+	if fi.IsDir() {
+		return f.path + "/", nil
+	}
 	return f.path, nil
 }
 
