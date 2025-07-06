@@ -210,27 +210,8 @@ func (s *Server) layoutTemplate(mediaType string) (*templateRenderer, error) {
 		}),
 	}
 
-	// Load main contents template.
-	main, err := s.templateFS.Template(path.Join(mediaType, "main.html"), opts...)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, fmt.Errorf("media type: %s is not supported: %w", mediaType, err)
-		}
-		return nil, err
-	}
-
-	// Load layout template.
-	layout, err := s.templateFS.Template("layout.html", opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Merge layout and main templates.
-	layout, err = layout.Clone()
-	if err != nil {
-		return nil, err
-	}
-	_, err = layout.AddParseTree("main", main.Tree)
+	// Load layout and main templates.
+	tmpl, err := s.templateFS.Template2("layout.html", path.Join(mediaType, "main.html"), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +223,7 @@ func (s *Server) layoutTemplate(mediaType string) (*templateRenderer, error) {
 	}
 
 	return &templateRenderer{
-		Template: layout,
+		Template: tmpl,
 		ext:      ext,
 	}, nil
 }

@@ -6,7 +6,6 @@ package templatefs
 
 import (
 	"html/template"
-	"io"
 	"io/fs"
 	"time"
 )
@@ -55,38 +54,60 @@ func (opts options) apply(tmpl *template.Template) (*template.Template, error) {
 
 var _ Option = (options)(nil)
 
-func (fs *FS) Template(name string, opts ...Option) (*template.Template, error) {
+func (fs *FS) modTime(name string) (time.Time, error) {
 	f, err := fs.Open(name)
 	if err != nil {
-		return nil, err
+		return time.Time{}, err
 	}
 	defer f.Close()
 	fi, err := f.Stat()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return fi.ModTime(), nil
+}
+
+func (fs *FS) latestModTime(names ...string) (time.Time, error) {
+	var latest time.Time
+	for _, name := range names {
+		ti, err := fs.modTime(name)
+		if err != nil {
+			return time.Time{}, err
+		}
+		if ti.After(latest) {
+			latest = ti
+		}
+	}
+	return latest, nil
+}
+
+func (fs *FS) Template2(layoutName, contentName string, opts ...Option) (*template.Template, error) {
+	latest, err := fs.latestModTime(layoutName, contentName)
 	if err != nil {
 		return nil, err
 	}
 
 	// Check cache for a parsed Template
-	if entry, ok := fs.cache[name]; ok && !fi.ModTime().After(entry.ModTime) {
+	cacheName := layoutName + ":" + contentName
+	if entry, ok := fs.cache[cacheName]; ok && !latest.After(entry.ModTime) {
 		return entry.Template, nil
 	}
 
 	// Create a new template and apply options
-	tmpl, err := options(opts).apply(template.New(name))
+	layout, err := options(opts).apply(template.New(layoutName))
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse body of the template
-	body, err := io.ReadAll(f)
+	// Parse template files.
+	_, err = layout.ParseFS(fs, layoutName, contentName)
 	if err != nil {
 		return nil, err
 	}
-	tmpl.Parse(string(body))
 
-	fs.cache[name] = &cacheEntry{
-		Template: tmpl,
-		ModTime:  fi.ModTime(),
+	fs.cache[cacheName] = &cacheEntry{
+		Template: layout,
+		ModTime:  latest,
 	}
-	return tmpl, nil
+	return layout, nil
 }
