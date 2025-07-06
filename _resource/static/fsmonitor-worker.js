@@ -19,7 +19,7 @@ function pingAllClients() {
   clients = clients.filter((c) => {
     if (c.ping > c.pong) {
       // Delete the client connection
-      console.log(`disconnected: path=${c.path} type=${c.type} (len=${clients.length-1})`);
+      console.log(`disconnected: path=${c.path} type=${c.type} ping/pong=${c.ping}/0${c.pong} (len=${clients.length-1})`);
       return false;
     } else {
       // Ping with the stream status
@@ -84,7 +84,7 @@ onconnect = (ev) => {
           path: path,
           type: type,
           ping: now,
-          pong: 0,
+          pong: now,
           pchk: path instanceof RegExp ? (p) => path.test(p) : (p) => p == path,
         });
         port.postMessage(["ping", streamStatus]);
