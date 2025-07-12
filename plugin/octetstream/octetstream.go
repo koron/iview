@@ -1,3 +1,5 @@
+// Package octetstream provides a layout for iviews that display dumps of
+// application/octet-stream files.
 package octetstream
 
 import (
