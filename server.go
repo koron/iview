@@ -18,6 +18,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/koron/iview/internal/templatefs"
+	"github.com/koron/iview/layout"
 	"github.com/koron/iview/plugin"
 )
 
@@ -227,7 +228,7 @@ func (s *Server) serveRedirect(w http.ResponseWriter, newURL string) {
 	w.WriteHeader(http.StatusMovedPermanently)
 }
 
-func (s *Server) layoutTemplate(mediaType string) (*templateRenderer, error) {
+func (s *Server) layoutTemplate(mediaType string) (*layout.Renderer, error) {
 	opts := []templatefs.Option{
 		templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
 			tmpl.Funcs(plugin.GetTemplateGlobalFuncMap())
@@ -251,9 +252,9 @@ func (s *Server) layoutTemplate(mediaType string) (*templateRenderer, error) {
 		return nil, err
 	}
 
-	return &templateRenderer{
-		Template: tmpl,
-		ext:      ext,
+	return &layout.Renderer{
+		Template:   tmpl,
+		Extensions: ext,
 	}, nil
 }
 
@@ -273,7 +274,7 @@ func loadAsHTML(fsys fs.FS, name string) (template.HTML, error) {
 	return template.HTML(b), nil
 }
 
-func (s *Server) loadLayoutExtensions(mediaType string) (*LayoutExtensions, error) {
+func (s *Server) loadLayoutExtensions(mediaType string) (*layout.Extensions, error) {
 	head, err := loadAsHTML(s.templateFS, path.Join(mediaType, "layout_ext_head.html"))
 	if err != nil {
 		return nil, err
@@ -281,7 +282,7 @@ func (s *Server) loadLayoutExtensions(mediaType string) (*LayoutExtensions, erro
 	if head == "" {
 		return nil, nil
 	}
-	return &LayoutExtensions{
+	return &layout.Extensions{
 		Head: head,
 	}, nil
 }
