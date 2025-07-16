@@ -15,7 +15,8 @@ import (
 type Renderer struct {
 	*template.Template
 
-	ExtHead template.HTML
+	MediaType string
+	ExtHead   template.HTML
 }
 
 func OpenRenderer(fsys *templatefs.FS, mediaType string) (*Renderer, error) {
@@ -43,8 +44,9 @@ func OpenRenderer(fsys *templatefs.FS, mediaType string) (*Renderer, error) {
 	}
 
 	return &Renderer{
-		Template: tmpl,
-		ExtHead:  head,
+		Template:  tmpl,
+		MediaType: mediaType,
+		ExtHead:   head,
 	}, nil
 }
 
@@ -66,6 +68,9 @@ func loadLayoutExt(fsys fs.FS, mediaType, name string) (template.HTML, error) {
 
 func (r *Renderer) Render(w io.Writer, rawPath string, f http.File) error {
 	doc := NewDoc(f, DocWithPath(rawPath), DocWithExtHead(r.ExtHead))
-	// TODO: apply media type filters.
+	// Apply layout document filters.
+	for _, f := range plugin.GetLayoutDocumentFilters(r.MediaType) {
+		doc = f.Apply(doc)
+	}
 	return r.Execute(w, doc)
 }
