@@ -1,6 +1,7 @@
 package layout
 
 import (
+	"html/template"
 	"io/fs"
 )
 
@@ -12,9 +13,15 @@ type Document interface {
 	Read([]byte) (int, error)
 	Readdir(count int) ([]fs.FileInfo, error)
 	ReadAllString() (string, error)
+
+	ExtHead() (template.HTML, error)
 }
 
 type Link struct {
 	Name string
 	Path string
+}
+
+type LayoutExtensions struct {
+	Head any
 }
