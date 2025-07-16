@@ -15,7 +15,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/koron/iview/internal/templatefs"
 	"github.com/koron/iview/layout"
 	"github.com/koron/iview/plugin"
@@ -40,31 +39,6 @@ func New(rootDir string, templateFS fs.FS) *Server {
 	}
 }
 
-func tryGit(f http.File) error {
-	fi, err := f.Stat()
-	if err != nil {
-		return err
-	}
-	log.Printf("tryGit: fi.Name=%s", fi.Name())
-	r, err := git.PlainOpenWithOptions(fi.Name(), &git.PlainOpenOptions{DetectDotGit: true})
-	if err != nil {
-		return err
-	}
-	wt, err := r.Worktree()
-	if err != nil {
-		return err
-	}
-	status, err := wt.Status()
-	if err != nil {
-		return err
-	}
-	log.Printf("status:")
-	for n, s := range status {
-		log.Printf("  - %s: %+v", n, s)
-	}
-	return nil
-}
-
 // detectMediaType detects media type of the file.
 func (s *Server) detectMediaType(f http.File) (string, error) {
 	defer f.Seek(0, io.SeekStart)
@@ -73,9 +47,6 @@ func (s *Server) detectMediaType(f http.File) (string, error) {
 		return "", err
 	}
 	if fi.IsDir() {
-		if err := tryGit(f); err != nil {
-			log.Printf("tryGit failed: %s", err)
-		}
 		return plugin.MediaTypeDirectory, nil
 	}
 	ext := path.Ext(fi.Name())
