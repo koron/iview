@@ -116,7 +116,7 @@ func (s *Server) determineRenderer(f http.File) (plugin.HTMLRenderer, error) {
 		return r, nil
 	}
 	// Default layout template renderer.
-	return s.layoutTemplate(mediaType)
+	return s.layoutRenderer(mediaType)
 }
 
 func (s *Server) openFile(upath string) (http.File, fs.FileInfo, error) {
@@ -132,20 +132,65 @@ func (s *Server) openFile(upath string) (http.File, fs.FileInfo, error) {
 	return f, fi, nil
 }
 
+func (s *Server) serveRawFile(w http.ResponseWriter, r *http.Request) {
+	s.base.ServeHTTP(w, r)
+}
+
+func (s *Server) serveOpenWithEditor(w http.ResponseWriter, r *http.Request) {
+	fpath := filepath.FromSlash(strings.TrimLeft(path.Clean(r.URL.Path), "/"))
+	editor, err := editorCommand()
+	if err != nil {
+		s.serveError(w, r, err)
+		return
+	}
+	cmd := exec.Command(editor, fpath)
+	cmd.Dir = s.rootDir
+	err = cmd.Start()
+	if err != nil {
+		s.serveError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	return
+}
+
+func (s *Server) serveWithRenderer(w http.ResponseWriter, r *http.Request, file http.File) {
+	// Determine renderer for the file.
+	renderer, err := s.determineRenderer(file)
+	if err != nil {
+		s.serveError(w, r, err)
+		return
+	}
+
+	// Render as HTML
+	bb := &bytes.Buffer{}
+	err = renderer.Render(bb, path.Clean(r.URL.Path), file)
+	if err != nil {
+		s.serveError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Cache-Control", "no-store")
+	setModTimeAsDate(w, file)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	io.Copy(w, bb)
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	upath := path.Clean(r.URL.Path)
 
 	// Open a file and get its information. Resource existence proof.
-	f, fi, err := s.openFile(upath)
+	file, fi, err := s.openFile(upath)
 	if err != nil {
 		// Should be 404 not found
 		s.serveError(w, r, err)
 		return
 	}
-	defer f.Close()
+	defer file.Close()
 
 	if r.Method == "HEAD" {
-		w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
+		setModTimeAsDate(w, file)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -158,49 +203,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If "raw" query parameter is provided, defer to http.FileServer.
 	if r.URL.Query().Has("raw") {
-		s.base.ServeHTTP(w, r)
+		s.serveRawFile(w, r)
 		return
 	}
 
 	// If "edit" parameter is provided, open with editor.
 	if r.URL.Query().Has("edit") {
-		fpath := filepath.FromSlash(strings.TrimLeft(upath, "/"))
-		editor, err := editorCommand()
-		if err != nil {
-			s.serveError(w, r, err)
-			return
-		}
-		cmd := exec.Command(editor, fpath)
-		cmd.Dir = s.rootDir
-		err = cmd.Start()
-		if err != nil {
-			s.serveError(w, r, err)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
+		s.serveOpenWithEditor(w, r)
 		return
 	}
 
-	// Determine renderer for the file.
-	renderer, err := s.determineRenderer(f)
-	if err != nil {
-		s.serveError(w, r, err)
-		return
-	}
-
-	// Render as HTML
-	bb := &bytes.Buffer{}
-	err = renderer.Render(bb, upath, f)
-	if err != nil {
-		s.serveError(w, r, err)
-		return
-	}
-
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	io.Copy(w, bb)
+	s.serveWithRenderer(w, r, file)
 }
 
 func (s *Server) toHTTPError(err error) int {
@@ -228,7 +241,7 @@ func (s *Server) serveRedirect(w http.ResponseWriter, newURL string) {
 	w.WriteHeader(http.StatusMovedPermanently)
 }
 
-func (s *Server) layoutTemplate(mediaType string) (*layout.Renderer, error) {
+func (s *Server) layoutRenderer(mediaType string) (*layout.Renderer, error) {
 	opts := []templatefs.Option{
 		templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
 			tmpl.Funcs(plugin.GetTemplateGlobalFuncMap())
@@ -256,6 +269,14 @@ func (s *Server) layoutTemplate(mediaType string) (*layout.Renderer, error) {
 		Template: tmpl,
 		ExtHead:  head,
 	}, nil
+}
+
+func setModTimeAsDate(w http.ResponseWriter, file http.File) {
+	fi, err := file.Stat()
+	if err != nil {
+		return
+	}
+	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
 }
 
 func loadAsHTML(fsys fs.FS, name string) (template.HTML, error) {
