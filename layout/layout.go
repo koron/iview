@@ -29,20 +29,51 @@ type Link struct {
 // DocBase
 
 type DocBase struct {
-	http.File
+	file    DocFile
 	rawPath string
 	extHead template.HTML
 }
 
 var _ Document = (*DocBase)(nil)
 
-func NewDoc() Document {
-	// TODO:
-	return &DocBase{}
+type DocFile interface {
+	Read([]byte) (int, error)
+	Readdir(int) ([]fs.FileInfo, error)
+	Stat() (fs.FileInfo, error)
+}
+
+type DocOption interface {
+	apply(*DocBase)
+}
+
+type DocOptionFunc func(*DocBase)
+
+func (f DocOptionFunc) apply(doc *DocBase) { f(doc) }
+
+func DocWithPath(path string) DocOption {
+	return DocOptionFunc(func(doc *DocBase) {
+		doc.rawPath = path
+	})
+}
+
+func DocWithExtHead(extHead template.HTML) DocOption {
+	return DocOptionFunc(func(doc *DocBase) {
+		doc.extHead = extHead
+	})
+}
+
+func NewDoc(file DocFile, options ...DocOption) Document {
+	doc := &DocBase{
+		file: file,
+	}
+	for _, opt := range options {
+		opt.apply(doc)
+	}
+	return doc
 }
 
 func (doc *DocBase) Name() (string, error) {
-	fi, err := doc.Stat()
+	fi, err := doc.file.Stat()
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +81,7 @@ func (doc *DocBase) Name() (string, error) {
 }
 
 func (doc *DocBase) Path() (string, error) {
-	fi, err := doc.Stat()
+	fi, err := doc.file.Stat()
 	if err != nil {
 		return "", err
 	}
@@ -79,6 +110,14 @@ func (doc *DocBase) Breadcrumbs() ([]Link, error) {
 	return links, nil
 }
 
+func (doc *DocBase) Read(b []byte) (int, error) {
+	return doc.file.Read(b)
+}
+
+func (doc *DocBase) Readdir(count int) ([]fs.FileInfo, error) {
+	return doc.file.Readdir(count)
+}
+
 func (doc *DocBase) ReadAllString() (string, error) {
 	b, err := io.ReadAll(doc)
 	if err != nil {
@@ -101,11 +140,7 @@ type Renderer struct {
 }
 
 func (r *Renderer) Render(w io.Writer, rawPath string, f http.File) error {
-	doc := &DocBase{
-		File:    f,
-		rawPath: rawPath,
-		extHead: r.ExtHead,
-	}
-	// TODO:
+	doc := NewDoc(f, DocWithPath(rawPath), DocWithExtHead(r.ExtHead))
+	// TODO: apply media type filters.
 	return r.Execute(w, doc)
 }
