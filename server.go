@@ -247,14 +247,14 @@ func (s *Server) layoutTemplate(mediaType string) (*layout.Renderer, error) {
 	}
 
 	// Load layout extensions by media type
-	ext, err := s.loadLayoutExtensions(mediaType)
+	head, err := s.loadLayoutExt(mediaType, "head")
 	if err != nil {
 		return nil, err
 	}
 
 	return &layout.Renderer{
-		Template:   tmpl,
-		Extensions: ext,
+		Template: tmpl,
+		ExtHead:  head,
 	}, nil
 }
 
@@ -274,15 +274,7 @@ func loadAsHTML(fsys fs.FS, name string) (template.HTML, error) {
 	return template.HTML(b), nil
 }
 
-func (s *Server) loadLayoutExtensions(mediaType string) (*layout.LayoutExtensions, error) {
-	head, err := loadAsHTML(s.templateFS, path.Join(mediaType, "layout_ext_head.html"))
-	if err != nil {
-		return nil, err
-	}
-	if head == "" {
-		return nil, nil
-	}
-	return &layout.LayoutExtensions{
-		Head: head,
-	}, nil
+func (s *Server) loadLayoutExt(mediaType, name string) (template.HTML, error) {
+	n := path.Join(mediaType, "layout_ext_"+name+".html")
+	return loadAsHTML(s.templateFS, n)
 }
