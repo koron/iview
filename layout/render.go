@@ -9,14 +9,14 @@ import (
 type Renderer struct {
 	*template.Template
 
-	Extensions *Extensions
+	Extensions *LayoutExtensions
 }
 
 func (r *Renderer) Render(w io.Writer, rawPath string, f http.File) error {
 	data := &Data{
 		File:       f,
 		RawPath:    rawPath,
-		Extensions: r.Extensions,
+		LayoutExtensions: r.Extensions,
 	}
 	return r.Execute(w, data)
 }

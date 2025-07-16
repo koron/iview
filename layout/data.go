@@ -9,23 +9,25 @@ import (
 type Data struct {
 	http.File
 
-	RawPath    string
-	Extensions *Extensions
+	RawPath          string
+	LayoutExtensions *LayoutExtensions
 }
 
-type Extensions struct {
+var _ Document = (*Data)(nil)
+
+type LayoutExtensions struct {
 	Head any
 }
 
-func (f *Data) Name() (any, error) {
+func (f *Data) Name() (string, error) {
 	fi, err := f.Stat()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	return fi.Name(), nil
 }
 
-func (f *Data) Path() (any, error) {
+func (f *Data) Path() (string, error) {
 	fi, err := f.Stat()
 	if err != nil {
 		return "", err
@@ -36,17 +38,12 @@ func (f *Data) Path() (any, error) {
 	return f.RawPath, nil
 }
 
-func (f *Data) Content() (any, error) {
+func (f *Data) ReadAllString() (string, error) {
 	b, err := io.ReadAll(f)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	return string(b), nil
-}
-
-type Link struct {
-	Name string
-	Path string
 }
 
 func (f *Data) Breadcrumbs() ([]Link, error) {
@@ -66,4 +63,12 @@ func (f *Data) Breadcrumbs() ([]Link, error) {
 	}
 	links[len(links)-1].Path = ""
 	return links, nil
+}
+
+func (f *Data) Content() (any, error) {
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
 }

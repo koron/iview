@@ -274,7 +274,7 @@ func loadAsHTML(fsys fs.FS, name string) (template.HTML, error) {
 	return template.HTML(b), nil
 }
 
-func (s *Server) loadLayoutExtensions(mediaType string) (*layout.Extensions, error) {
+func (s *Server) loadLayoutExtensions(mediaType string) (*layout.LayoutExtensions, error) {
 	head, err := loadAsHTML(s.templateFS, path.Join(mediaType, "layout_ext_head.html"))
 	if err != nil {
 		return nil, err
@@ -282,7 +282,7 @@ func (s *Server) loadLayoutExtensions(mediaType string) (*layout.Extensions, err
 	if head == "" {
 		return nil, nil
 	}
-	return &layout.Extensions{
+	return &layout.LayoutExtensions{
 		Head: head,
 	}, nil
 }
