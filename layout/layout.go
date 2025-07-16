@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
-	"net/http"
 	"strings"
 )
 
@@ -128,19 +127,4 @@ func (doc *DocBase) ReadAllString() (string, error) {
 
 func (doc *DocBase) ExtHead() (template.HTML, error) {
 	return doc.extHead, nil
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// Renderer
-
-type Renderer struct {
-	*template.Template
-
-	ExtHead template.HTML
-}
-
-func (r *Renderer) Render(w io.Writer, rawPath string, f http.File) error {
-	doc := NewDoc(f, DocWithPath(rawPath), DocWithExtHead(r.ExtHead))
-	// TODO: apply media type filters.
-	return r.Execute(w, doc)
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"io/fs"
 	"log"
@@ -116,7 +115,7 @@ func (s *Server) determineRenderer(f http.File) (plugin.HTMLRenderer, error) {
 		return r, nil
 	}
 	// Default layout template renderer.
-	return s.layoutRenderer(mediaType)
+	return layout.OpenRenderer(s.templateFS, mediaType)
 }
 
 func (s *Server) openFile(upath string) (http.File, fs.FileInfo, error) {
@@ -241,61 +240,10 @@ func (s *Server) serveRedirect(w http.ResponseWriter, newURL string) {
 	w.WriteHeader(http.StatusMovedPermanently)
 }
 
-func (s *Server) layoutRenderer(mediaType string) (*layout.Renderer, error) {
-	opts := []templatefs.Option{
-		templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
-			tmpl.Funcs(plugin.GetTemplateGlobalFuncMap())
-			funcMap := plugin.GetTemplateMediaTypeFuncMap(mediaType)
-			if funcMap == nil {
-				return tmpl, nil
-			}
-			return tmpl.Funcs(funcMap), nil
-		}),
-	}
-
-	// Load layout and main templates.
-	tmpl, err := s.templateFS.Template2("layout.html", path.Join(mediaType, "main.html"), opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Load layout extensions by media type
-	head, err := s.loadLayoutExt(mediaType, "head")
-	if err != nil {
-		return nil, err
-	}
-
-	return &layout.Renderer{
-		Template: tmpl,
-		ExtHead:  head,
-	}, nil
-}
-
 func setModTimeAsDate(w http.ResponseWriter, file http.File) {
 	fi, err := file.Stat()
 	if err != nil {
 		return
 	}
 	w.Header().Set("Date", fi.ModTime().UTC().Format(http.TimeFormat))
-}
-
-func loadAsHTML(fsys fs.FS, name string) (template.HTML, error) {
-	f, err := fsys.Open(name)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return "", nil
-		}
-		return "", err
-	}
-	defer f.Close()
-	b, err := io.ReadAll(f)
-	if err != nil {
-		return "", err
-	}
-	return template.HTML(b), nil
-}
-
-func (s *Server) loadLayoutExt(mediaType, name string) (template.HTML, error) {
-	n := path.Join(mediaType, "layout_ext_"+name+".html")
-	return loadAsHTML(s.templateFS, n)
 }
