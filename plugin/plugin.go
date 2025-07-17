@@ -74,7 +74,7 @@ func AddTemplateMediaTypeFuncMap(mediaType string, funcMap template.FuncMap) {
 
 var layoutDocumentFilters = map[string][]layoutdto.DocumentFilter{}
 
-func AddLayoutDocumentFilter(mediaType string, filters...layoutdto.DocumentFilter) {
+func AddLayoutDocumentFilter(mediaType string, filters ...layoutdto.DocumentFilter) {
 	if len(filters) == 0 {
 		return
 	}
