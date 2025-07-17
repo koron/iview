@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+
+	layoutdto "github.com/koron/iview/layout/dto"
 )
 
 const (
@@ -68,4 +70,18 @@ func GetTemplateMediaTypeFuncMap(mediaType string) template.FuncMap {
 
 func AddTemplateMediaTypeFuncMap(mediaType string, funcMap template.FuncMap) {
 	mediaTypeFuncMap[mediaType] = funcMap
+}
+
+var layoutDocumentFilters = map[string][]layoutdto.DocumentFilter{}
+
+func AddLayoutDocumentFilter(mediaType string, filters...layoutdto.DocumentFilter) {
+	if len(filters) == 0 {
+		return
+	}
+	curr := layoutDocumentFilters[mediaType]
+	layoutDocumentFilters[mediaType] = append(curr, filters...)
+}
+
+func GetLayoutDocumentFilters(mediaType string) []layoutdto.DocumentFilter {
+	return layoutDocumentFilters[mediaType]
 }

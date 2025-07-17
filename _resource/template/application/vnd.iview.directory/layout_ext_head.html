@@ -23,4 +23,31 @@
     }
   }
 }
+
+.icon {
+  position: relative;
+
+  > :not(:last-child) {
+    position: absolute;
+  }
+  > :last-child {
+    position: relative;
+  }
+
+  .git-status {
+    font-size: 1.375ex;
+    font-weight: 900;
+    bottom: 0px;
+    z-index: 100;
+
+    &.git-status-staging {
+      color: #0c0;
+      left: 0;
+    }
+    &.git-status-worktree {
+      color: #f00;
+      right: 0.625ex;
+    }
+  }
+}
 </style>
