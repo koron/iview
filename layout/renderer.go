@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/alecthomas/chroma/v2"
 	"github.com/koron/iview/internal/templatefs"
 	"github.com/koron/iview/plugin"
 )
@@ -16,10 +17,11 @@ type Renderer struct {
 	*template.Template
 
 	MediaType string
+	Lexer     chroma.Lexer
 	ExtHead   template.HTML
 }
 
-func OpenRenderer(fsys *templatefs.FS, mediaType string) (*Renderer, error) {
+func OpenRenderer(fsys *templatefs.FS, mediaType string, lexer chroma.Lexer) (*Renderer, error) {
 	opts := []templatefs.Option{
 		templatefs.OptionFunc(func(tmpl *template.Template) (*template.Template, error) {
 			tmpl.Funcs(plugin.GetTemplateGlobalFuncMap())
@@ -46,6 +48,7 @@ func OpenRenderer(fsys *templatefs.FS, mediaType string) (*Renderer, error) {
 	return &Renderer{
 		Template:  tmpl,
 		MediaType: mediaType,
+		Lexer:     lexer,
 		ExtHead:   head,
 	}, nil
 }
@@ -67,7 +70,7 @@ func loadLayoutExt(fsys fs.FS, mediaType, name string) (template.HTML, error) {
 }
 
 func (r *Renderer) Render(w io.Writer, rawPath string, f http.File) error {
-	doc := NewDoc(f, DocWithPath(rawPath), DocWithExtHead(r.ExtHead))
+	doc := NewDoc(f, DocWithPath(rawPath), DocWithExtHead(r.ExtHead), DocWithLexer(r.Lexer))
 	// Apply layout document filters.
 	for _, f := range plugin.GetLayoutDocumentFilters(r.MediaType) {
 		doc = f.Apply(doc)

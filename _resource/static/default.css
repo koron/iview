@@ -13,6 +13,10 @@
   border: 1px solid lightgray;
   border-radius: 1em;
   padding: 1em;
+
+  pre {
+    margin: 0;
+  }
 }
 
 #header {
