@@ -125,9 +125,25 @@ func (doc *DocBase) IsHighlightEnable() bool {
 	return doc.lexer != nil
 }
 
+func (doc *DocBase) HightlightCSS() (template.CSS, error) {
+	formatter := html.New(html.WithClasses(true))
+	style := styles.GitHub
+	bb := &bytes.Buffer{}
+	err := formatter.WriteCSS(bb, style)
+	if err != nil {
+		return "", err
+	}
+	return template.CSS(bb.String()), nil
+}
+
 func (doc *DocBase) HightlightedHTML() (template.HTML, error) {
-	// TODO: setup options
-	f := html.New()
+	formatter := html.New(
+		html.WithClasses(true),
+		html.WithLineNumbers(true),
+		html.WithLinkableLineNumbers(true, "L"),
+		html.LineNumbersInTable(false),
+	)
+	style := styles.GitHub
 	s, err := doc.ReadAllString()
 	if err != nil {
 		return "", err
@@ -137,7 +153,7 @@ func (doc *DocBase) HightlightedHTML() (template.HTML, error) {
 		return "", err
 	}
 	bb := &bytes.Buffer{}
-	err = f.Format(bb, styles.GitHub, iter)
+	err = formatter.Format(bb, style, iter)
 	if err != nil {
 		return "", err
 	}

@@ -1,7 +1,9 @@
 {{ if .IsHighlightEnable -}}
-<div class="highlighted">
+<style>
+{{ .HightlightCSS -}}
+</style>
+
 {{ .HightlightedHTML }}
-</div>
 {{ else -}}
-<pre>{{ .ReadAllString }}</pre>
+<pre><code>{{ .ReadAllString }}</code></pre>
 {{ end -}}

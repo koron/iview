@@ -15,6 +15,7 @@ type Document interface {
 	ReadAllString() (string, error)
 
 	IsHighlightEnable() bool
+	HightlightCSS() (template.CSS, error)
 	HightlightedHTML() (template.HTML, error)
 
 	ExtHead() (template.HTML, error)
