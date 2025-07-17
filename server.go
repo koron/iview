@@ -15,6 +15,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/koron/iview/internal/templatefs"
 	"github.com/koron/iview/layout"
 	"github.com/koron/iview/plugin"
@@ -81,12 +83,24 @@ func (s *Server) determineRenderer(f http.File) (plugin.HTMLRenderer, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Determine lexer for plain text
+	var lexer chroma.Lexer
+	if mediaType == plugin.MediaTypePlainText {
+		fi, err := f.Stat()
+		if err != nil {
+			return nil, err
+		}
+		lexer = lexers.Match(fi.Name())
+	}
+
 	// Custom renderer
 	if r, ok := plugin.MediaTypeToRenderer[mediaType]; ok {
 		return r, nil
 	}
+
 	// Default layout template renderer.
-	return layout.OpenRenderer(s.templateFS, mediaType)
+	return layout.OpenRenderer(s.templateFS, mediaType, lexer)
 }
 
 func (s *Server) openFile(upath string) (http.File, fs.FileInfo, error) {

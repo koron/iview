@@ -40,3 +40,5 @@ The resource directory is normally exposed via `embed.FS`, but the physical file
         <https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined>
     *   Font file `_resource/static/thirdparty/material-symbols.woff2`:  
         <https://fonts.gstatic.com/s/materialsymbolsoutlined/v257/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOej.woff2>
+
+*   [Syntax Highlighter: alecthomas/chroma](https://github.com/alecthomas/chroma)

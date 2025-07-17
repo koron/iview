@@ -1,1 +1,9 @@
-<pre>{{ .ReadAllString }}</pre>
+{{ if .IsHighlightEnable -}}
+<style>
+{{ .HightlightCSS -}}
+</style>
+
+{{ .HightlightedHTML }}
+{{ else -}}
+<pre><code>{{ .ReadAllString }}</code></pre>
+{{ end -}}

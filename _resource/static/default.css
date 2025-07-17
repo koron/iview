@@ -13,6 +13,20 @@
   border: 1px solid lightgray;
   border-radius: 1em;
   padding: 1em;
+
+  > pre {
+    margin: 0;
+  }
+
+  > pre.chroma {
+    > code {
+      font-size: 14px;
+      font-family: "Cica", "Consolas", monospace;
+    }
+    .line:hover {
+      background-color: #e0e0e0;
+    }
+  }
 }
 
 #header {

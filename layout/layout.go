@@ -1,11 +1,15 @@
 package layout
 
 import (
+	"bytes"
 	"html/template"
 	"io"
 	"io/fs"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/koron/iview/layout/dto"
 )
 
@@ -16,6 +20,7 @@ type DocBase struct {
 	file    DocFile
 	rawPath string
 	extHead template.HTML
+	lexer   chroma.Lexer
 }
 
 var _ dto.Document = (*DocBase)(nil)
@@ -43,6 +48,12 @@ func DocWithPath(path string) DocOption {
 func DocWithExtHead(extHead template.HTML) DocOption {
 	return DocOptionFunc(func(doc *DocBase) {
 		doc.extHead = extHead
+	})
+}
+
+func DocWithLexer(lexer chroma.Lexer) DocOption {
+	return DocOptionFunc(func(doc *DocBase) {
+		doc.lexer = lexer
 	})
 }
 
@@ -108,6 +119,45 @@ func (doc *DocBase) ReadAllString() (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+func (doc *DocBase) IsHighlightEnable() bool {
+	return doc.lexer != nil
+}
+
+func (doc *DocBase) HightlightCSS() (template.CSS, error) {
+	formatter := html.New(html.WithClasses(true))
+	style := styles.GitHub
+	bb := &bytes.Buffer{}
+	err := formatter.WriteCSS(bb, style)
+	if err != nil {
+		return "", err
+	}
+	return template.CSS(bb.String()), nil
+}
+
+func (doc *DocBase) HightlightedHTML() (template.HTML, error) {
+	formatter := html.New(
+		html.WithClasses(true),
+		html.WithLineNumbers(true),
+		html.WithLinkableLineNumbers(true, "L"),
+		html.LineNumbersInTable(false),
+	)
+	style := styles.GitHub
+	s, err := doc.ReadAllString()
+	if err != nil {
+		return "", err
+	}
+	iter, err := doc.lexer.Tokenise(nil, s)
+	if err != nil {
+		return "", err
+	}
+	bb := &bytes.Buffer{}
+	err = formatter.Format(bb, style, iter)
+	if err != nil {
+		return "", err
+	}
+	return template.HTML(bb.String()), nil
 }
 
 func (doc *DocBase) ExtHead() (template.HTML, error) {
