@@ -3,6 +3,7 @@ package gitfunc
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/go-git/go-git/v5"
 )
@@ -28,23 +29,64 @@ func DirStatus(dir string) (git.Status, error) {
 		return nil, err
 	}
 
-	root := wt.Filesystem.Root()
+	root, err := filepath.Abs(wt.Filesystem.Root())
+	if err != nil {
+		return nil, err
+	}
 	absdir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, err
 	}
+	absdir += string(filepath.Separator)
 
 	dirStatus := git.Status{}
 	for n, s := range status {
 		fullpath := filepath.Join(root, filepath.FromSlash(n))
-		if filepath.Dir(fullpath) != absdir {
+		if !strings.HasPrefix(fullpath, absdir) {
 			continue
 		}
 		relpath, err := filepath.Rel(absdir, fullpath)
 		if err != nil {
 			return nil, err
 		}
-		dirStatus[relpath] = s
+		components := strings.Split(relpath, string(filepath.Separator))
+		if len(components) == 0 {
+			continue
+		}
+		if s.Staging == git.Untracked && s.Worktree == git.Untracked {
+			s.Staging = git.Unmodified
+		}
+		dirStatus[components[0]] = mergeFileStatus(dirStatus[components[0]], s)
 	}
 	return dirStatus, nil
+}
+
+var statusCodeWeights = map[git.StatusCode]int{
+	git.Unmodified:         1,
+	git.Copied:             2,
+	git.Renamed:            3,
+	git.UpdatedButUnmerged: 4,
+	git.Modified:           5,
+	git.Added:              6,
+	git.Deleted:            7,
+	git.Untracked:          8,
+}
+
+func mergeStatusCode(a, b git.StatusCode) git.StatusCode {
+	if statusCodeWeights[a] > statusCodeWeights[b] {
+		return a
+	}
+	return b
+}
+
+func mergeFileStatus(a, b *git.FileStatus) *git.FileStatus {
+	if a == nil {
+		return b
+	}
+	a.Staging = mergeStatusCode(a.Staging, b.Staging)
+	a.Worktree = mergeStatusCode(a.Worktree, b.Worktree)
+	if a.Extra == "" {
+		a.Extra = b.Extra
+	}
+	return a
 }
