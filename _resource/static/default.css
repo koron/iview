@@ -13,33 +13,8 @@
   position: relative;
   border: 1px solid lightgray;
   border-radius: 0.5em;
-  padding: 1em;
+  padding: 0;
   overflow: hidden;
-
-  > pre {
-    margin: 0;
-  }
-
-  .lexer-name {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 1;
-    padding: 0.25em 1em;
-    border-radius: 0 0.5em 0 0.5em;
-    font-size: 0.75em;
-    background-color: lightgray;
-  }
-
-  > pre.chroma {
-    > code {
-      font-size: 14px;
-      font-family: "Cica", "Consolas", monospace;
-    }
-    .line:hover {
-      background-color: #e0e0e0;
-    }
-  }
 }
 
 #header {
@@ -133,8 +108,6 @@ table {
 
 .grid-table {
   display: grid;
-  border-left: var(--table-border-width) var(--table-border-style) var(--table-border-color);
-  border-top: var(--table-border-width) var(--table-border-style) var(--table-border-color);
 
   > .grid-header {
     display: contents;
@@ -161,7 +134,14 @@ table {
     display: block;
     box-sizing: border-box;
     padding: 0.15em 0.60em;
-    border-right: var(--table-border-width) var(--table-border-style) var(--table-border-color);
-    border-bottom: var(--table-border-width) var(--table-border-style) var(--table-border-color);
+  }
+
+  /* Border settings */
+  border: var(--table-border-width) var(--table-border-style) var(--table-border-color);
+  > * > *:not(:first-child) {
+    border-left: var(--table-border-width) var(--table-border-style) var(--table-border-color);
+  }
+  > :not(:first-child) > * {
+    border-top: var(--table-border-width) var(--table-border-style) var(--table-border-color);
   }
 }
