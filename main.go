@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"time"
 
+	"github.com/koron/iview/internal/browser"
 	"github.com/koron/iview/internal/fschanges"
 )
 
@@ -21,6 +23,7 @@ var (
 	flagDir    string
 	flagRsrc   string
 	flagEditor string
+	flagWeb    bool
 )
 
 func editorCommand() (string, error) {
@@ -53,6 +56,7 @@ func main() {
 	flag.StringVar(&flagDir, "dir", ".", `root directory for the content to host`)
 	flag.StringVar(&flagRsrc, "rsrc", "", `resource directory for debug`)
 	flag.StringVar(&flagEditor, "editor", "", `editor to open the file`)
+	flag.BoolVar(&flagWeb, "web", false, `start the browser`)
 	flag.Parse()
 
 	var err error
@@ -88,6 +92,14 @@ func main() {
 		log.Fatal(err)
 	}
 	http.Handle("/", New(flagDir, tmplFS))
+
+	if flagWeb {
+		// Start the web browser
+		go func() {
+			time.Sleep(200 * time.Millisecond)
+			browser.Open("http://" + flagAddr)
+		}()
+	}
 
 	log.Printf("start to listening on %s", flagAddr)
 	log.Fatal(http.ListenAndServe(flagAddr, nil))
