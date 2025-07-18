@@ -10,12 +10,25 @@
 }
 
 #main {
+  position: relative;
   border: 1px solid lightgray;
-  border-radius: 1em;
+  border-radius: 0.5em;
   padding: 1em;
+  overflow: hidden;
 
   > pre {
     margin: 0;
+  }
+
+  .lexer-name {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+    padding: 0.25em 1em;
+    border-radius: 0 0.5em 0 0.5em;
+    font-size: 0.75em;
+    background-color: lightgray;
   }
 
   > pre.chroma {

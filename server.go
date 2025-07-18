@@ -92,6 +92,9 @@ func (s *Server) determineRenderer(f http.File) (plugin.HTMLRenderer, error) {
 			return nil, err
 		}
 		lexer = lexers.Match(fi.Name())
+		if lexer == nil {
+			lexer = lexers.Fallback
+		}
 	}
 
 	// Custom renderer

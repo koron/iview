@@ -9,6 +9,7 @@ import (
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/koron/iview/layout/dto"
 )
@@ -121,8 +122,18 @@ func (doc *DocBase) ReadAllString() (string, error) {
 	return string(b), nil
 }
 
-func (doc *DocBase) IsHighlightEnable() bool {
+func (doc *DocBase) IsHighlighted() bool {
 	return doc.lexer != nil
+}
+
+func (doc *DocBase) HighlightName() string {
+	if doc.lexer == nil {
+		return ""
+	}
+	if doc.lexer == lexers.Fallback {
+		return "Plain"
+	}
+	return doc.lexer.Config().Name
 }
 
 func (doc *DocBase) HightlightCSS() (template.CSS, error) {

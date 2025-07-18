@@ -14,7 +14,8 @@ type Document interface {
 	Readdir(count int) ([]fs.FileInfo, error)
 	ReadAllString() (string, error)
 
-	IsHighlightEnable() bool
+	IsHighlighted() bool
+	HighlightName() string
 	HightlightCSS() (template.CSS, error)
 	HightlightedHTML() (template.HTML, error)
 

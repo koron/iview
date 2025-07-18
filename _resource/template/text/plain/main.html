@@ -1,7 +1,9 @@
-{{ if .IsHighlightEnable -}}
+{{ if .IsHighlighted -}}
 <style>
 {{ .HightlightCSS -}}
 </style>
+
+<div class="lexer-name">{{ .HighlightName }}</div>
 
 {{ .HightlightedHTML }}
 {{ else -}}
