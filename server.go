@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
@@ -215,7 +215,7 @@ func (s *Server) toHTTPError(err error) int {
 
 func (s *Server) serveError(w http.ResponseWriter, r *http.Request, err error) {
 	statusCode := s.toHTTPError(err)
-	log.Printf("request failed: %d %s %s: %s", statusCode, r.Method, r.URL, err)
+	slog.Warn("request failed", "statusCode", statusCode, "method", r.Method, "URL", r.URL, "error", err)
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")

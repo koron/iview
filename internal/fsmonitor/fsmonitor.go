@@ -7,7 +7,7 @@ package fsmonitor
 import (
 	"context"
 	"io/fs"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -85,7 +85,7 @@ func (m *Monitor) targetType(entry entryInfo) entryType {
 }
 
 func (m *Monitor) addWatch(dir string) {
-	//log.Printf("addWatch: %s", dir)
+	slog.Debug("addWatch", "dir", dir)
 	m.watcher.Add(dir)
 }
 
@@ -114,13 +114,13 @@ func (m *Monitor) run(ctx context.Context) {
 			m.wg.Done()
 			return
 		case e := <-m.watcher.Events:
-			//log.Printf("fsnotify detected: %+v", e)
+			slog.Debug("fsnotify detected", "event", e)
 			switch e.Op {
 			case fsnotify.Create:
 				// Add a newly created directory to the watch list.
 				fi, err := os.Stat(e.Name)
 				if err != nil {
-					log.Printf("fail to stat on %s: %s", e.Name, err)
+					slog.Warn("fail to stat", "name", e.Name, "error", err)
 					break
 				}
 				if m.targetType(fi) == etWatch {
@@ -130,7 +130,7 @@ func (m *Monitor) run(ctx context.Context) {
 			// Compose a path of the event target on the HTTP server
 			name, err := filepath.Rel(m.rootDir, e.Name)
 			if err != nil {
-				log.Printf("fail to calc relative path: %s", err)
+				slog.Warn("fail to calc relative path", "error", err)
 				break
 			}
 			m.topic.Publish(Event{

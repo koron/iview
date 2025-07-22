@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"sync"
 
@@ -62,7 +63,7 @@ func (es *EventServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		case ev := <-s.Channel():
-			//log.Printf("fsmonitor receive: %+v", ev)
+			slog.Debug("fsmonitor receive", "event", ev)
 			b, _ := json.Marshal(toChangeEvent(ev))
 			io.WriteString(w, "data: ")
 			w.Write(b)

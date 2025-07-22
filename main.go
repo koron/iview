@@ -6,6 +6,7 @@ import (
 	"flag"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
@@ -101,6 +102,6 @@ func main() {
 		}()
 	}
 
-	log.Printf("start to listening on %s", flagAddr)
+	slog.Info("start to listening", "addr", flagAddr)
 	log.Fatal(http.ListenAndServe(flagAddr, nil))
 }
