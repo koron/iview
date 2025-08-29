@@ -1,6 +1,7 @@
 package gitinfo
 
 import (
+	"errors"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -38,7 +39,12 @@ func (gi *gitInfo) getGitDirStatus() (git.Status, error) {
 	if p == "" {
 		p = "."
 	}
-	return gitfunc.DirStatus(p)
+	s, err := gitfunc.DirStatus(p)
+	// Ignore git.ErrRepositoryNotExists
+	if err != nil && errors.Is(err, git.ErrRepositoryNotExists) {
+		return nil, nil
+	}
+	return s, err
 }
 
 type GitStatus = git.FileStatus
