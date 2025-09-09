@@ -2,10 +2,7 @@
 package markdown
 
 import (
-	"bytes"
 	"html/template"
-	"io"
-	"log"
 	"net/url"
 	"sync"
 
@@ -68,33 +65,10 @@ func (doc *markdownDoc) MarkdownHeading() (template.HTML, error) {
 	return doc.renderHeading, doc.renderErr
 }
 
-func writeInnerText(w io.Writer, node ast.Node) {
-	if c := node.AsContainer(); c != nil {
-		if len(c.Literal) > 0 {
-			w.Write(c.Literal)
-		} else if len(c.Content) > 0 {
-			w.Write(c.Content)
-		}
-	} else if l := node.AsLeaf(); l != nil {
-		if len(l.Literal) > 0 {
-			w.Write(l.Literal)
-		} else if len(l.Content) > 0 {
-			w.Write(l.Content)
-		}
-	}
-	for _, child := range node.GetChildren() {
-		writeInnerText(w, child)
-	}
-}
-
-func innerText(node ast.Node) string {
-	bb := &bytes.Buffer{}
-	writeInnerText(bb, node)
-	return bb.String()
-}
-
 func ToHTML(src string) (body template.HTML, heading template.HTML) {
 	doc := markdown.Parse([]byte(src), parser.NewWithExtensions(parser.CommonExtensions|parser.AutoHeadingIDs))
+
+	iw := &indexWriter{}
 
 	// For images hosted locally, add the "raw" parameter to the URL to display
 	// the image as is.
@@ -114,7 +88,7 @@ func ToHTML(src string) (body template.HTML, heading template.HTML) {
 			if entering {
 				break
 			}
-			log.Printf("entering=%t level=%d id=%+v %q", entering, node.Level, node.HeadingID, innerText(node))
+			iw.addHeading(node)
 		}
 		return ast.GoToNext
 	})
@@ -124,8 +98,8 @@ func ToHTML(src string) (body template.HTML, heading template.HTML) {
 			html.NofollowLinks |
 			html.NoreferrerLinks |
 			html.NoopenerLinks |
-			//html.HrefTargetBlank |
+			//mdhtml.HrefTargetBlank |
 			html.FootnoteReturnLinks,
 	}))
-	return template.HTML(dst), "" // TODO:
+	return template.HTML(dst), iw.html()
 }

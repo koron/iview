@@ -9,4 +9,29 @@
     text-underline-offset: .2rem;
   }
 }
+
+.markdown-heading {
+  display: inline-block;
+  font-size: 0.8em;
+
+  padding: 8px;
+
+  border: 1px solid lightgray;
+  border-radius: 0.5em;
+
+  position: sticky;
+  top: 0;
+  right: 0;
+  z-index: 254;
+
+  ul {
+    list-style-type: none;
+    margin-block: 0;
+    padding-inline-start: 1em;
+  }
+
+  > ul {
+    padding-inline-start: 0;
+  }
+}
 </style>
