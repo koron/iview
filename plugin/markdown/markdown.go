@@ -98,7 +98,7 @@ func ToHTML(src string) (body template.HTML, heading template.HTML) {
 			html.NofollowLinks |
 			html.NoreferrerLinks |
 			html.NoopenerLinks |
-			//mdhtml.HrefTargetBlank |
+			//html.HrefTargetBlank |
 			html.FootnoteReturnLinks,
 	}))
 	return template.HTML(dst), iw.html()
