@@ -1,3 +1,4 @@
+// Package gitinfo provides git information.
 package gitinfo
 
 import (
@@ -54,6 +55,5 @@ func (gi *gitInfo) GitStatus(name string) (*GitStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	fstat, _ := stat[name]
-	return fstat, nil
+	return stat[name], nil
 }

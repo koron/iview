@@ -1,3 +1,4 @@
+// Package layout provides layout mechanism for iview
 package layout
 
 import (
@@ -136,11 +137,14 @@ func (doc *DocBase) HighlightName() string {
 	return doc.lexer.Config().Name
 }
 
+func (doc *DocBase) getStyle() *chroma.Style {
+	return styles.Get("github")
+}
+
 func (doc *DocBase) HightlightCSS() (template.CSS, error) {
 	formatter := html.New(html.WithClasses(true))
-	style := styles.GitHub
 	bb := &bytes.Buffer{}
-	err := formatter.WriteCSS(bb, style)
+	err := formatter.WriteCSS(bb, doc.getStyle())
 	if err != nil {
 		return "", err
 	}
@@ -154,7 +158,6 @@ func (doc *DocBase) HightlightedHTML() (template.HTML, error) {
 		html.WithLinkableLineNumbers(true, "L"),
 		html.LineNumbersInTable(false),
 	)
-	style := styles.GitHub
 	s, err := doc.ReadAllString()
 	if err != nil {
 		return "", err
@@ -164,7 +167,7 @@ func (doc *DocBase) HightlightedHTML() (template.HTML, error) {
 		return "", err
 	}
 	bb := &bytes.Buffer{}
-	err = formatter.Format(bb, style, iter)
+	err = formatter.Format(bb, doc.getStyle(), iter)
 	if err != nil {
 		return "", err
 	}

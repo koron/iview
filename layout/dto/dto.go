@@ -1,3 +1,4 @@
+// Package dto provides Data Transfer Object for layout system.
 package dto
 
 import (

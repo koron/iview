@@ -51,7 +51,6 @@ func (doc *markdownDoc) renderMarkdown() {
 			return
 		}
 		doc.renderHTML, doc.renderHeading = ToHTML(src)
-		return
 	})
 }
 

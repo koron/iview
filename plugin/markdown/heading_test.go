@@ -1,20 +1,12 @@
 package markdown
 
 import (
-	"html/template"
 	"strings"
 	"testing"
 
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/google/go-cmp/cmp"
 )
-
-func assertHTML(t *testing.T, want string, got template.HTML) {
-	t.Helper()
-	if d := cmp.Diff(want, string(got)); d != "" {
-		t.Errorf("unexpected HTML: -want +got\n%s", d)
-	}
-}
 
 func testHeading(t *testing.T, want string, headings ...*ast.Heading) {
 	t.Helper()

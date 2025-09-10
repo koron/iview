@@ -138,7 +138,6 @@ func (s *Server) serveOpenWithEditor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	return
 }
 
 func (s *Server) serveWithRenderer(w http.ResponseWriter, r *http.Request, file http.File) {
