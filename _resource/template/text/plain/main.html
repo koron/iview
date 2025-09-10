@@ -3,9 +3,11 @@
 {{ .HightlightCSS -}}
 </style>
 
+<div class="highlighed-code">
 <div class="lexer-name">{{ .HighlightName }}</div>
 
 {{ .HightlightedHTML }}
+</div>
 {{ else -}}
 <pre><code>{{ .ReadAllString }}</code></pre>
 {{ end -}}
