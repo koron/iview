@@ -1,6 +1,14 @@
 <style>
+#main > .container {
+  margin: 8px;
+}
+
 .hexdump {
-  display: grid;
+  border: var(--table-border-width) var(--table-border-style) var(--table-border-color);
+  border-radius: 0.5em;
+  overflow: hidden;
+
+  display: inline-grid;
   grid-template-columns: 5ex repeat(16, 3ex) min-content;
 
   .row {

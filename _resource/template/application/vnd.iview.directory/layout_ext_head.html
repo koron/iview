@@ -2,8 +2,11 @@
 .grid-table.directory {
   --sub-font-size: 0.85rem;
 
-  margin: 0;
-  border: none;
+  margin: 8px;
+
+  border: var(--table-border-width) var(--table-border-style) var(--table-border-color);
+  border-radius: 0.5em;
+  overflow: hidden;
 
   grid-template-columns: 1fr auto auto;
 
