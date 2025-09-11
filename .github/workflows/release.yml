@@ -7,7 +7,6 @@ permissions:
 
 env:
   GO_VERSION: '>=1.24.0'
-  NAME: 'iview'
 
 jobs:
 
@@ -45,6 +44,7 @@ jobs:
       id: setup
       shell: bash
       run: |
+        export NAME="${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_ONWER}/}"
         if [[ ${GITHUB_REF} =~ ^refs/tags/v[0-9]+\.[0-9]+ ]] ; then
           export VERSION=${GITHUB_REF_NAME}
         else
@@ -134,3 +134,4 @@ jobs:
         append_body: true
 
 # based on: github.com/koron-go/_skeleton/.github/workflows/release.yml
+# $Hash:a755db6448267ac8728ef231a42695dfaf54f96df97a396c7128423d$
