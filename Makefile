@@ -46,7 +46,12 @@ clean:
 	rm -f tags
 	rm -f tmp/_cover.out tmp/cover.html
 
-list-upgradable-modules:
+.PHONY: upgradable
+upgradable:
+	@go list -m -mod=readonly -u -f='{{if and (not .Indirect) (not .Main)}}{{if .Update}}{{.Path}}@{{.Update.Version}} [{{.Version}}]{{else if .Replace}}{{if .Replace.Update}}{{.Path}}@{{.Replace.Update.Version}} [replaced:{{.Replace.Version}} {{.Version}}]{{end}}{{end}}{{end}}' all
+
+.PHONY: upgradable-all
+upgradable-all:
 	@go list -m -u -f '{{if .Update}}{{.Path}} {{.Version}} [{{.Update.Version}}]{{end}}' all
 
 # Build all "main" packages
