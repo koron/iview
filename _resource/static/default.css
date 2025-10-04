@@ -7,27 +7,30 @@
   --table-border-width: 1px;
   --table-border-style: solid;
   --table-border-color: #e0e0e0;
+
+  --header-height: 46px;
 }
 
 /* Layout */
 
+html {
+  scroll-padding-top: var(--header-height);
+}
+
 body {
   margin: 0;
-
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  max-height: 100vh;
 }
 
 #header {
   flex: 0 0 auto;
   margin: 0;
+
+  position: sticky;
+  top: 0;
 }
 
 #main {
   flex: 1 1 auto;
-  overflow: auto;
   margin: 0;
   padding: 0;
 }
