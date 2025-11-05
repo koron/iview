@@ -150,7 +150,7 @@ jobs:
         ls -laFR _build
 
     - name: Artifact upload
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ env.GOOS }}_${{ env.GOARCH }}
         path: _build/${{ env.PKGNAME }}${{ env.PKGEXT }}
@@ -162,19 +162,19 @@ jobs:
     needs:
     - build
     steps:
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with: { name: darwin_amd64 }
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with: { name: darwin_arm64 }
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with: { name: linux_amd64 }
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with: { name: linux_arm64 }
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with: { name: windows_amd64 }
     - run: ls -lafR
     - name: Release
-      uses: softprops/action-gh-release@62c96d0c4e8a889135c1f3a25910db8dbe0e85f7 # v2.3.4
+      uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2.4.1
       with:
         draft: true
         prerelease: ${{ contains(github.ref_name, '-alpha.') || contains(github.ref_name, '-beta.') }}
@@ -186,4 +186,4 @@ jobs:
         append_body: true
 
 # based on: github.com/koron-go/_skeleton/.github/workflows/release.yml
-# $Hash:ca0f706fc727b0268fe795ffe0362da8fb375a439a60fe79e96773ab$
+# $Hash:330a6f15d8c7140f320e0e8eb6aa2aada4b657d94dd10f83f37d0213$
