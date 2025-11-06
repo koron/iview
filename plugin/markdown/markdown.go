@@ -65,7 +65,10 @@ func (doc *markdownDoc) MarkdownHeading() (template.HTML, error) {
 }
 
 func ToHTML(src string) (body template.HTML, heading template.HTML) {
-	doc := markdown.Parse([]byte(src), parser.NewWithExtensions(parser.CommonExtensions|parser.AutoHeadingIDs))
+	p := parser.NewWithExtensions(parser.CommonExtensions | parser.AutoHeadingIDs)
+	p.Opts.ParserHook = ParserHook
+
+	doc := markdown.Parse([]byte(src), p)
 
 	iw := &indexWriter{}
 
@@ -92,13 +95,15 @@ func ToHTML(src string) (body template.HTML, heading template.HTML) {
 		return ast.GoToNext
 	})
 
-	dst := markdown.Render(doc, html.NewRenderer(html.RendererOptions{
+	r := html.NewRenderer(html.RendererOptions{
 		Flags: html.CommonFlags |
 			html.NofollowLinks |
 			html.NoreferrerLinks |
 			html.NoopenerLinks |
 			//html.HrefTargetBlank |
 			html.FootnoteReturnLinks,
-	}))
+		RenderNodeHook: RenderHook,
+	})
+	dst := markdown.Render(doc, r)
 	return template.HTML(dst), iw.html()
 }
