@@ -3,7 +3,11 @@ package markdown
 import (
 	"bytes"
 	"io"
+	"log"
 
+	"github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/gomarkdown/markdown/ast"
 )
 
@@ -40,6 +44,8 @@ func RenderHook(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool
 	case *Details:
 		renderDetails(w, n, entering)
 		return ast.GoToNext, true
+	case *ast.CodeBlock:
+		return renderCode(w, n, entering)
 	}
 	return ast.GoToNext, false
 }
@@ -50,4 +56,26 @@ func renderDetails(w io.Writer, details *Details, entering bool) {
 	} else {
 		io.WriteString(w, detailsEnd)
 	}
+}
+
+func renderCode(w io.Writer, codeBlock *ast.CodeBlock, entering bool) (ast.WalkStatus, bool) {
+	lang := string(codeBlock.Info)
+	lexer := lexers.Get(lang)
+	if lexer == nil {
+		lexer = lexers.Fallback
+	}
+	iter, err := lexer.Tokenise(nil, string(codeBlock.Literal))
+	if err != nil {
+		log.Printf("renderCode: lexer.Tokenise failed: %s", err)
+		return ast.GoToNext, false
+	}
+
+	formatter := html.New(html.WithClasses(true))
+	err = formatter.Format(w, styles.Get("github"), iter)
+	if err != nil {
+		log.Printf("renderCode: formatter.Format failed: %s", err)
+		return ast.GoToNext, false
+	}
+
+	return ast.GoToNext, true
 }
