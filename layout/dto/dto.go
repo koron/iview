@@ -7,8 +7,14 @@ import (
 )
 
 type Document interface {
+	// Name returns file name.
 	Name() (string, error)
+	// Path returns a physical source file path.
 	Path() (string, error)
+	// Filepath returns a physical source file path.
+	Filepath() (string, error)
+
+	// Breadcrumbs returns links of breadcrumbs navigator.
 	Breadcrumbs() ([]Link, error)
 
 	Read([]byte) (int, error)

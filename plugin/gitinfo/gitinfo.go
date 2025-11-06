@@ -4,7 +4,6 @@ package gitinfo
 import (
 	"errors"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/go-git/go-git/v5"
@@ -32,15 +31,11 @@ func gitInfoWrap(base layoutdto.Document) layoutdto.Document {
 }
 
 func (gi *gitInfo) getGitDirStatus() (git.Status, error) {
-	p, err := gi.Path()
+	p, err := gi.Filepath()
 	if err != nil {
 		return nil, err
 	}
-	p = filepath.FromSlash(strings.Trim(p, "/"))
-	if p == "" {
-		p = "."
-	}
-	s, err := gitfunc.DirStatus(p)
+	s, err := gitfunc.DirStatus(filepath.Clean(p))
 	// Ignore git.ErrRepositoryNotExists
 	if err != nil && errors.Is(err, git.ErrRepositoryNotExists) {
 		return nil, nil

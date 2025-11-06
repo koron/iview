@@ -69,8 +69,20 @@ func loadLayoutExt(fsys fs.FS, mediaType, name string) (template.HTML, error) {
 	return template.HTML(b), nil
 }
 
+func extractFilename(f http.File) string {
+	if namer, ok := f.(interface{ Filename() string }); ok {
+		return namer.Filename()
+	}
+	return ""
+}
+
 func (r *Renderer) Render(w io.Writer, rawPath string, f http.File) error {
-	doc := NewDoc(f, DocWithPath(rawPath), DocWithExtHead(r.ExtHead), DocWithLexer(r.Lexer))
+	doc := NewDoc(f,
+		DocWithPath(rawPath),
+		DocWithFilename(extractFilename(f)),
+		DocWithExtHead(r.ExtHead),
+		DocWithLexer(r.Lexer),
+	)
 	// Apply layout document filters.
 	for _, f := range plugin.GetLayoutDocumentFilters(r.MediaType) {
 		doc = f.Apply(doc)

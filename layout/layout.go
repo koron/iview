@@ -19,10 +19,11 @@ import (
 // DocBase
 
 type DocBase struct {
-	file    DocFile
-	rawPath string
-	extHead template.HTML
-	lexer   chroma.Lexer
+	file     DocFile
+	rawPath  string
+	filename string
+	extHead  template.HTML
+	lexer    chroma.Lexer
 }
 
 var _ dto.Document = (*DocBase)(nil)
@@ -44,6 +45,12 @@ func (f DocOptionFunc) apply(doc *DocBase) { f(doc) }
 func DocWithPath(path string) DocOption {
 	return DocOptionFunc(func(doc *DocBase) {
 		doc.rawPath = path
+	})
+}
+
+func DocWithFilename(filename string) DocOption {
+	return DocOptionFunc(func(doc *DocBase) {
+		doc.filename = filename
 	})
 }
 
@@ -86,6 +93,10 @@ func (doc *DocBase) Path() (string, error) {
 		return doc.rawPath + "/", nil
 	}
 	return doc.rawPath, nil
+}
+
+func (doc *DocBase) Filepath() (string, error) {
+	return doc.filename, nil
 }
 
 func (doc *DocBase) Breadcrumbs() ([]dto.Link, error) {

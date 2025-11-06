@@ -106,6 +106,16 @@ func (s *Server) determineRenderer(f http.File) (plugin.HTMLRenderer, error) {
 	return layout.OpenRenderer(s.templateFS, mediaType, lexer)
 }
 
+type File struct {
+	http.File
+
+	filename string
+}
+
+func (f *File) Filename() string {
+	return f.filename
+}
+
 func (s *Server) openFile(upath string) (http.File, fs.FileInfo, error) {
 	f, err := s.rootFS.Open(upath)
 	if err != nil {
@@ -116,7 +126,10 @@ func (s *Server) openFile(upath string) (http.File, fs.FileInfo, error) {
 		f.Close()
 		return nil, nil, err
 	}
-	return f, fi, nil
+	return &File{
+		File:     f,
+		filename: filepath.Join(s.rootDir, upath),
+	}, fi, nil
 }
 
 func (s *Server) serveRawFile(w http.ResponseWriter, r *http.Request) {
