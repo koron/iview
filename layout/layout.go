@@ -11,7 +11,7 @@ import (
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/lexers"
-	"github.com/alecthomas/chroma/v2/styles"
+	"github.com/koron/iview/internal/highlight"
 	"github.com/koron/iview/layout/dto"
 )
 
@@ -148,14 +148,9 @@ func (doc *DocBase) HighlightName() string {
 	return doc.lexer.Config().Name
 }
 
-func (doc *DocBase) getStyle() *chroma.Style {
-	return styles.Get("github")
-}
-
 func (doc *DocBase) HightlightCSS() (template.CSS, error) {
-	formatter := html.New(html.WithClasses(true))
 	bb := &bytes.Buffer{}
-	err := formatter.WriteCSS(bb, doc.getStyle())
+	err := highlight.WriteCSS(bb)
 	if err != nil {
 		return "", err
 	}
@@ -163,12 +158,6 @@ func (doc *DocBase) HightlightCSS() (template.CSS, error) {
 }
 
 func (doc *DocBase) HightlightedHTML() (template.HTML, error) {
-	formatter := html.New(
-		html.WithClasses(true),
-		html.WithLineNumbers(true),
-		html.WithLinkableLineNumbers(true, "L"),
-		html.LineNumbersInTable(false),
-	)
 	s, err := doc.ReadAllString()
 	if err != nil {
 		return "", err
@@ -178,7 +167,10 @@ func (doc *DocBase) HightlightedHTML() (template.HTML, error) {
 		return "", err
 	}
 	bb := &bytes.Buffer{}
-	err = formatter.Format(bb, doc.getStyle(), iter)
+	err = highlight.FormatHTML(bb, iter,
+		html.WithLineNumbers(true),
+		html.WithLinkableLineNumbers(true, "L"),
+		html.LineNumbersInTable(false))
 	if err != nil {
 		return "", err
 	}

@@ -5,10 +5,9 @@ import (
 	"io"
 	"log"
 
-	"github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/lexers"
-	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/gomarkdown/markdown/ast"
+	"github.com/koron/iview/internal/highlight"
 )
 
 func ParserHook(data []byte) (ast.Node, []byte, int) {
@@ -70,8 +69,7 @@ func renderCode(w io.Writer, codeBlock *ast.CodeBlock, entering bool) (ast.WalkS
 		return ast.GoToNext, false
 	}
 
-	formatter := html.New(html.WithClasses(true))
-	err = formatter.Format(w, styles.Get("github"), iter)
+	err = highlight.FormatHTML(w, iter)
 	if err != nil {
 		log.Printf("renderCode: formatter.Format failed: %s", err)
 		return ast.GoToNext, false
