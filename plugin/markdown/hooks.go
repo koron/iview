@@ -32,13 +32,22 @@ func findDetailsEnd(data []byte) int {
 	for curr < len(data) {
 		end := bytes.Index(data[curr:], []byte(detailsEnd))
 		if end < 0 {
+			// No </details> found.
 			break
 		}
 		begin := bytes.Index(data[curr:], []byte(detailsBegin))
-		if begin < 0 {
+		if begin < 0 || begin > end {
+			// No nested <details> found.
 			return curr + end
 		}
-		curr += end + len(detailsEnd)
+		// Find end of the nested details.
+		nestedBegin := curr + begin + len(detailsBegin)
+		nestedEnd := findDetailsEnd(data[nestedBegin:])
+		if nestedEnd < 0 {
+			// Imcomplete nested <details> element.
+			break
+		}
+		curr = nestedBegin + nestedEnd + len(detailsEnd)
 	}
 	return -1
 }
