@@ -26,15 +26,33 @@ const (
 	detailsEnd   = "</details>"
 )
 
+// findDetailsEnd finds the end of element, </details>, with considering nested elements.
+func findDetailsEnd(data []byte) int {
+	curr := 0
+	for curr < len(data) {
+		end := bytes.Index(data[curr:], []byte(detailsEnd))
+		if end < 0 {
+			break
+		}
+		begin := bytes.Index(data[curr:], []byte(detailsBegin))
+		if begin < 0 {
+			return curr + end
+		}
+		curr += end + len(detailsEnd)
+	}
+	return -1
+}
+
 func parseDetails(data []byte) (ast.Node, []byte, int) {
 	if !bytes.HasPrefix(data, []byte(detailsBegin)) {
 		return nil, nil, 0
 	}
 	start := len(detailsBegin)
-	end := bytes.Index(data[start:], []byte(detailsEnd)) + start
+	end := findDetailsEnd(data[start:])
 	if end < 0 {
 		return nil, nil, 0
 	}
+	end += start
 	return &Details{}, data[start:end], end + len(detailsEnd)
 }
 
