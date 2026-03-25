@@ -6,7 +6,7 @@ permissions:
   contents: write
 
 env:
-  GO_VERSION: '>=1.24.0'
+  GO_VERSION: 'oldstable'
 
 jobs:
 
@@ -186,4 +186,4 @@ jobs:
         append_body: true
 
 # based on: github.com/koron-go/_skeleton/.github/workflows/release.yml
-# $Hash:ff352735f61d68ddd4101d199c2cfc409e8cd5f7f169ffef8a6ad65f$
+# $Hash:aa46fc2bcd7403eea1e58f42bd97279dc2350da2631e1b1a1668249d$

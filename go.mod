@@ -1,6 +1,6 @@
 module github.com/koron/iview
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/alecthomas/chroma/v2 v2.20.0
