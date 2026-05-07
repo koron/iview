@@ -8,7 +8,6 @@ import (
 	"context"
 	"io/fs"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -83,41 +82,20 @@ type entryInfo interface {
 var _ entryInfo = (fs.DirEntry)(nil)
 var _ entryInfo = (fs.FileInfo)(nil)
 
-type entryType int
-
-const (
-	etFile entryType = iota
-	etWatch
-	etExclude
-)
-
-func (m *Monitor) targetType(entry entryInfo) entryType {
-	if !entry.IsDir() {
-		return etFile
-	}
-	if _, ok := m.excludes[entry.Name()]; ok {
-		return etExclude
-	}
-	return etWatch
-}
-
-func (m *Monitor) addWatch(dir string) {
-	slog.Debug("addWatch", "dir", dir)
-	m.watcher.Add(dir, fsnotify.All)
+func (m *Monitor) isExcluded(entry entryInfo) bool {
+	_, ok := m.excludes[entry.Name()]
+	return ok
 }
 
 func (m *Monitor) run(ctx context.Context) {
 	// Add target directory and its sub directories to the watch list
 	// recursively
-	m.addWatch(m.rootDir)
+	m.watcher.AddRecursive(m.rootDir, fsnotify.All)
 	filepath.WalkDir(m.rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		switch m.targetType(d) {
-		case etWatch:
-			m.addWatch(path)
-		case etExclude:
+		if m.isExcluded(d) {
 			return filepath.SkipDir
 		}
 		return nil
@@ -132,18 +110,6 @@ func (m *Monitor) run(ctx context.Context) {
 			return
 		case e := <-m.watcher.Events:
 			slog.Debug("fsnotify detected", "event", e)
-			switch e.Op {
-			case fsnotify.Create:
-				// Add a newly created directory to the watch list.
-				fi, err := os.Stat(e.Name)
-				if err != nil {
-					slog.Warn("fail to stat", "name", e.Name, "error", err)
-					break
-				}
-				if m.targetType(fi) == etWatch {
-					m.addWatch(e.Name)
-				}
-			}
 			// Compose a path of the event target on the HTTP server
 			name, err := filepath.Rel(m.rootDir, e.Name)
 			if err != nil {
