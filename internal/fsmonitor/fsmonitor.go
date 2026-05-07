@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/gofsnotify/fsnotify"
 	"github.com/koron/iview/internal/pubsub"
 )
 
@@ -86,7 +86,7 @@ func (m *Monitor) targetType(entry entryInfo) entryType {
 
 func (m *Monitor) addWatch(dir string) {
 	slog.Debug("addWatch", "dir", dir)
-	m.watcher.Add(dir)
+	m.watcher.Add(dir, fsnotify.All)
 }
 
 func (m *Monitor) run(ctx context.Context) {

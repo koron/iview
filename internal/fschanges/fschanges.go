@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/gofsnotify/fsnotify"
 	"github.com/koron/iview/internal/fsmonitor"
 )
 
