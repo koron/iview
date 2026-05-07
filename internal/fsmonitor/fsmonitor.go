@@ -32,6 +32,18 @@ type Event struct {
 	Type Type
 }
 
+func regulateRootDir(dir string) (string, error) {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return "", err
+	}
+	expanded, err := filepath.EvalSymlinks(abs)
+	if err != nil {
+		return "", err
+	}
+	return expanded, nil
+}
+
 func New(ctx context.Context, dir string, opts ...Option) (*Monitor, error) {
 	ctx2, cancel := context.WithCancel(ctx)
 	w, err := fsnotify.NewWatcher()
@@ -39,10 +51,15 @@ func New(ctx context.Context, dir string, opts ...Option) (*Monitor, error) {
 		cancel()
 		return nil, err
 	}
+	rootDir, err := regulateRootDir(dir)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
 	m := &Monitor{
 		cancel:   cancel,
 		wg:       &sync.WaitGroup{},
-		rootDir:  dir,
+		rootDir:  rootDir,
 		watcher:  w,
 		topic:    pubsub.New[Event](),
 		excludes: map[string]struct{}{},
