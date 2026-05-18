@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gofsnotify/fsnotify"
+	"github.com/fswatcher/fswatcher"
 	"github.com/koron/iview/internal/fsmonitor"
 )
 
@@ -86,19 +86,19 @@ type changeEvent struct {
 
 func toChangeEvent(src fsmonitor.Event) changeEvent {
 	var typ []string
-	if src.Type.Has(fsnotify.Create) {
+	if src.Type.Has(fswatcher.Create) {
 		typ = append(typ, "create")
 	}
-	if src.Type.Has(fsnotify.Write) {
+	if src.Type.Has(fswatcher.Write) {
 		typ = append(typ, "write")
 	}
-	if src.Type.Has(fsnotify.Remove) {
+	if src.Type.Has(fswatcher.Remove) {
 		typ = append(typ, "remove")
 	}
-	if src.Type.Has(fsnotify.Rename) {
+	if src.Type.Has(fswatcher.Rename) {
 		typ = append(typ, "rename")
 	}
-	if src.Type.Has(fsnotify.Chmod) {
+	if src.Type.Has(fswatcher.Chmod) {
 		typ = append(typ, "chmod")
 	}
 	return changeEvent{

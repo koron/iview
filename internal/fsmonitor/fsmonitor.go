@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/gofsnotify/fsnotify"
+	"github.com/fswatcher/fswatcher"
 	"github.com/koron/iview/internal/pubsub"
 )
 
@@ -19,12 +19,12 @@ type Monitor struct {
 	cancel   context.CancelFunc
 	wg       *sync.WaitGroup
 	rootDir  string
-	watcher  *fsnotify.Watcher
+	watcher  *fswatcher.Watcher
 	topic    *pubsub.Topic[Event]
 	excludes map[string]struct{}
 }
 
-type Type = fsnotify.Op
+type Type = fswatcher.Op
 
 type Event struct {
 	Path string
@@ -45,7 +45,7 @@ func regulateRootDir(dir string) (string, error) {
 
 func New(ctx context.Context, dir string, opts ...Option) (*Monitor, error) {
 	ctx2, cancel := context.WithCancel(ctx)
-	w, err := fsnotify.NewWatcher()
+	w, err := fswatcher.NewWatcher()
 	if err != nil {
 		cancel()
 		return nil, err
@@ -90,7 +90,7 @@ func (m *Monitor) isExcluded(entry entryInfo) bool {
 func (m *Monitor) run(ctx context.Context) {
 	// Add target directory and its sub directories to the watch list
 	// recursively
-	m.watcher.AddRecursive(m.rootDir, fsnotify.All)
+	m.watcher.AddRecursive(m.rootDir, fswatcher.All)
 	filepath.WalkDir(m.rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -109,7 +109,7 @@ func (m *Monitor) run(ctx context.Context) {
 			m.wg.Done()
 			return
 		case e := <-m.watcher.Events:
-			slog.Debug("fsnotify detected", "event", e)
+			slog.Debug("fswatcher detected", "event", e)
 			// Compose a path of the event target on the HTTP server
 			name, err := filepath.Rel(m.rootDir, e.Name)
 			if err != nil {
